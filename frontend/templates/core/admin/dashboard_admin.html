@@ -1,0 +1,2444 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Assist Admin Console</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        .ax-scrollbar::-webkit-scrollbar { width: 10px; height: 10px; }
+        .ax-scrollbar::-webkit-scrollbar-thumb { background: rgba(17, 24, 39, 0.15); border-radius: 999px; }
+        .ax-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .adm-input {
+            width: 100%;
+            background: #ffffff;
+            border: 1px solid rgba(17, 24, 39, 0.08);
+            border-radius: 0.9rem;
+            padding: 0.85rem 1rem;
+            font-size: 0.875rem;
+            outline: none;
+        }
+        .adm-input:focus { box-shadow: 0 0 0 3px rgba(0, 107, 63, 0.2); border-color: rgba(0, 107, 63, 0.35); }
+    </style>
+    {% include 'includes/global_ui_assets.html' %}
+</head>
+<body class="bg-[#edf7f4] min-h-screen font-sans text-gray-800">
+    {% if messages %}
+        <script id="django-messages-json" type="application/json">
+            [
+                {% for message in messages %}
+                    {"tags":"{{ message.tags|escapejs }}","text":"{{ message|escapejs }}"}{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ]
+        </script>
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 4000,
+                    timerProgressBar: true,
+                    background: '#ecfdf5',
+                    color: '#064e3b',
+                    iconColor: '#059669',
+                    customClass: {
+                        popup: 'rounded-[1.75rem] border border-emerald-200 shadow-xl px-4 py-3',
+                        title: 'text-emerald-950 font-bold text-sm',
+                        htmlContainer: 'text-emerald-800 text-xs',
+                        timerProgressBar: 'bg-emerald-200',
+                        icon: 'border-emerald-200 bg-white/70 rounded-full',
+                    },
+                });
+
+                let msgs = [];
+                try {
+                    const raw = document.getElementById('django-messages-json')?.textContent || '[]';
+                    msgs = JSON.parse(raw);
+                } catch (e) {
+                    msgs = [];
+                }
+
+                msgs.forEach((m, idx) => {
+                    const tags = String(m?.tags || '').split(/\s+/).filter(Boolean);
+                    let icon = 'info';
+                    if (tags.includes('error')) icon = 'error';
+                    else if (tags.includes('success')) icon = 'success';
+                    else if (tags.includes('warning')) icon = 'warning';
+                    const title = icon === 'error' ? '¡Atención!' : icon === 'success' ? '¡Éxito!' : 'Aviso';
+
+                    setTimeout(function () {
+                        toast.fire({
+                            icon,
+                            title,
+                            text: String(m?.text || ''),
+                        });
+                    }, idx * 450);
+                });
+            });
+        </script>
+    {% endif %}
+
+    <div class="md:flex min-h-screen bg-[#edf7f4]">
+    <header class="md:hidden fixed top-0 inset-x-0 z-50 bg-white/90 backdrop-blur border-b border-slate-200/60">
+        <div class="h-16 px-4 flex items-center justify-between gap-3">
+            <button type="button" id="btn-open-admin-sidebar" class="w-11 h-11 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-700">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <path d="M4 6h16"/>
+                    <path d="M4 12h16"/>
+                    <path d="M4 18h16"/>
+                </svg>
+            </button>
+            <div class="min-w-0">
+                <div class="text-sm font-semibold text-slate-900 truncate">Assist Care</div>
+                <div class="text-[11px] text-slate-500 truncate">Admin Console</div>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="relative">
+                    <button type="button" id="notification-bell" class="relative w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-700">
+                        <span id="admin-bell-dot" class="{% if notificaciones %}{% else %}hidden {% endif %}absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-red-500 border-2 border-white"></span>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                            <path d="M13.7 21a2 2 0 0 1-3.4 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                    <div id="notification-dropdown-mobile" class="hidden fixed md:absolute top-20 md:top-full left-1/2 md:left-auto md:right-0 transform -translate-x-1/2 md:translate-x-0 md:mt-2 w-[calc(100vw-32px)] max-w-md mx-auto z-50 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden">
+                        <div class="p-4 border-b border-slate-100">
+                            <span class="text-sm font-semibold text-gray-900">Alertas del Sistema</span>
+                        </div>
+                        <div class="max-h-64 overflow-y-auto overflow-x-hidden ax-scrollbar">
+                            {% for alerta in alertas_sistema_cortas %}
+                                <div class="p-3 border-b border-gray-50 hover:bg-gray-50 text-left">
+                                    <p class="font-semibold text-xs text-emerald-700">Sistema • {{ alerta.fecha_hora|date:"d/m/Y H:i" }}</p>
+                                    <p class="text-sm text-gray-700 mt-0.5">{{ alerta.accion }}</p>
+                                </div>
+                            {% empty %}
+                                <div class="px-4 py-6 text-center text-sm text-gray-400">No hay alertas recientes en el sistema.</div>
+                            {% endfor %}
+                        </div>
+                        <div class="p-4 border-t border-slate-100 text-center">
+                            <button type="button" id="view-all-notifications-mobile" class="text-xs font-semibold text-emerald-700 hover:text-emerald-800">Ver todas las notificaciones</button>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" id="btn-open-biometrics" class="h-10 w-10 rounded-full bg-[#dcf2eb] border border-emerald-100/70 flex items-center justify-center text-[#0b2f24] font-bold text-sm">
+                    {% if user.get_full_name %}{{ user.get_full_name.0|upper }}{% else %}{{ user.username.0|upper }}{% endif %}
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div id="admin-sidebar-overlay" class="hidden md:hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 opacity-0 transition-opacity duration-200 pointer-events-none"></div>
+    <aside id="admin-sidebar-drawer" class="hidden md:hidden fixed top-0 left-0 bottom-0 w-[88%] max-w-sm bg-white z-50 shadow-2xl border-r border-slate-200/60 flex flex-col -translate-x-full transition-transform duration-200 will-change-transform">
+        <div class="h-16 px-4 flex items-center justify-between border-b border-slate-200/60">
+            <div class="text-sm font-semibold text-slate-900">Navegación</div>
+            <button type="button" id="btn-close-admin-sidebar" class="w-11 h-11 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-700">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+                    <path d="M18 6 6 18M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <div class="p-4 overflow-y-auto ax-scrollbar">
+            <nav class="space-y-2" aria-label="Navegación admin móvil">
+                <a href="#overview" data-ax-nav="overview" class="block px-4 py-3 rounded-xl text-sm bg-emerald-400 text-slate-900 font-semibold">Vista General</a>
+                <a href="#users" data-ax-nav="users" class="block px-4 py-3 rounded-xl text-sm bg-white border border-slate-200 text-slate-700 font-semibold">Gestión de Usuarios</a>
+                <a href="#services" data-ax-nav="services" class="block px-4 py-3 rounded-xl text-sm bg-white border border-slate-200 text-slate-700 font-semibold">Solicitudes de Servicio</a>
+                <a href="#reportes" data-ax-nav="reportes" class="block px-4 py-3 rounded-xl text-sm bg-white border border-slate-200 text-slate-700 font-semibold">Historial de Reportes</a>
+                <a href="#eliminacion" data-ax-nav="eliminacion" class="block px-4 py-3 rounded-xl text-sm bg-white border border-slate-200 text-slate-700 font-semibold">Historial de Eliminación</a>
+                <a href="#settings" data-ax-nav="settings" class="block px-4 py-3 rounded-xl text-sm bg-white border border-slate-200 text-slate-700 font-semibold">Ajustes</a>
+                <a href="#soporte" data-ax-nav="soporte" class="block px-4 py-3 rounded-xl text-sm bg-white border border-slate-200 text-slate-700 font-semibold">Soporte</a>
+            </nav>
+
+            <div class="mt-4 pt-4 border-t border-slate-200/60">
+                <a href="{% url 'logout' %}" class="w-full flex items-center justify-center px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+                    Cerrar sesión
+                </a>
+            </div>
+        </div>
+    </aside>
+
+    <aside class="hidden md:flex fixed top-0 left-0 h-screen w-64 bg-[#dcf2eb] flex-col justify-between p-6 border-r border-emerald-100/50 z-40">
+        <div>
+            <div class="flex items-start gap-3">
+                <div class="w-11 h-11 rounded-2xl bg-white/80 border border-emerald-100/70 flex items-center justify-center text-[#0b2f24]">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 2l8 4v6c0 6-8 10-8 10S4 18 4 12V6l8-4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                        <path d="M12 7v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        <path d="M9 10h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="text-lg font-bold text-[#0b2f24] leading-tight">Assist</div>
+                    <div class="text-xs font-semibold text-emerald-900/70 -mt-0.5">Admin Console</div>
+                </div>
+            </div>
+
+            <nav class="mt-8 space-y-1">
+                <a id="sidebar-overview" href="#overview" data-ax-nav="overview" class="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-emerald-950/80 hover:bg-white/60 transition-colors">
+                    <svg class="opacity-80" width="18" height="18" viewBox="0 0 24 24" fill="none">
+                        <path d="M3 10l9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V10Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                    </svg>
+                    Vista General
+                </a>
+                <a id="sidebar-usuarios" href="#users" data-ax-nav="users" class="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-emerald-950/80 hover:bg-white/60 transition-colors">
+                    <svg class="opacity-80" width="18" height="18" viewBox="0 0 24 24" fill="none">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                    Gestión de Usuarios
+                </a>
+                <a id="sidebar-solicitudes" href="#services" data-ax-nav="services" class="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-emerald-950/80 hover:bg-white/60 transition-colors">
+                    <svg class="opacity-80" width="18" height="18" viewBox="0 0 24 24" fill="none">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.73Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                        <path d="M12 22V12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        <path d="M3.5 7.5L12 12l8.5-4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                    Solicitudes de Servicio
+                </a>
+                <a href="{% url 'admin_donaciones' %}" class="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-emerald-950/80 hover:bg-white/60 transition-colors">
+                    <svg class="opacity-80" width="18" height="18" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 1v22" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        <path d="M17 5H9a3 3 0 0 0 0 6h6a3 3 0 0 1 0 6H6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Donaciones
+                </a>
+                <a id="sidebar-settings" href="#settings" data-ax-nav="settings" class="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-emerald-950/80 hover:bg-white/60 transition-colors">
+                    <svg class="opacity-80" width="18" height="18" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" stroke="currentColor" stroke-width="1.8"/>
+                        <path d="M19.4 15a7.9 7.9 0 0 0 .1-6l2-1.2-2-3.5-2.3.7a8.4 8.4 0 0 0-5.2-3L11 1H7l-.9 2.1a8.4 8.4 0 0 0-5.2 3L-1.4 4.3-3.4 7.8-1.4 9a7.9 7.9 0 0 0 .1 6l-2 1.2 2 3.5 2.3-.7a8.4 8.4 0 0 0 5.2 3L7 23h4l.9-2.1a8.4 8.4 0 0 0 5.2-3l2.3.7 2-3.5-2-1.1Z" stroke="currentColor" stroke-width="1.2" opacity="0.0"/>
+                    </svg>
+                    Ajustes
+                </a>
+                <a id="sidebar-reportes" href="#reportes" data-ax-nav="reportes" class="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-emerald-950/80 hover:bg-white/60 transition-colors">
+                    <svg class="opacity-80" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/>
+                        <path d="M14 2v6h6"/>
+                        <path d="M16 13H8"/>
+                        <path d="M16 17H8"/>
+                        <path d="M10 9H8"/>
+                    </svg>
+                    Historial de Reportes
+                </a>
+                <a id="sidebar-eliminacion" href="#eliminacion" data-ax-nav="eliminacion" class="flex items-center gap-3 px-3 py-2 rounded-xl text-sm text-emerald-950/80 hover:bg-white/60 transition-colors">
+                    <svg class="opacity-80" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                        <path d="M10 11v6"/>
+                        <path d="M14 11v6"/>
+                        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                    </svg>
+                    Historial de Eliminación
+                </a>
+            </nav>
+
+            <div class="mt-7">
+                <button type="button" id="btn-nuevo-reporte" onclick="document.getElementById('modal-reporte').classList.remove('hidden');" class="bg-[#0b2f24] text-white rounded-xl py-3 px-4 shadow-md text-center font-medium block text-sm w-full hover:bg-[#123d30] transition-colors">
+                    + Nuevo Reporte
+                </button>
+            </div>
+        </div>
+
+        <div class="space-y-3">
+            <a id="btn-soporte" href="#soporte" data-ax-nav="soporte" class="flex items-center gap-3 text-sm text-emerald-950/70 hover:text-emerald-950">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8"/>
+                    <path d="M12 17h.01" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+                    <path d="M9.5 9.5a2.6 2.6 0 0 1 5 .9c0 2.1-2.5 2-2.5 3.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+                Soporte
+            </a>
+            <a href="{% url 'logout' %}" class="flex items-center gap-3 text-sm text-emerald-950/70 hover:text-emerald-950">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    <path d="M16 17l5-5-5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+                Cerrar sesión
+            </a>
+        </div>
+    </aside>
+
+    <div class="flex-1 min-w-0 md:ml-64 pt-20 pb-24 md:pb-8 md:pt-8 px-4 sm:px-6 md:px-8 md:py-8 overflow-y-auto overflow-x-hidden ax-scrollbar">
+        <div class="flex items-start justify-between gap-6">
+            <form method="GET" class="flex-1 w-full md:max-w-xl">
+                <div class="flex flex-col">
+                    <div id="buscador-wrapper" class="relative">
+                        <div class="absolute inset-y-0 left-3 flex items-center text-gray-400">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/>
+                                <path d="M20 20l-3.2-3.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                            </svg>
+                        </div>
+                        <input id="buscador-input" name="search" value="{{ search_query|default:'' }}" placeholder="Buscar datos, usuarios, logs..." class="w-full bg-white border border-gray-100 rounded-2xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-200" />
+                        {% if estado_filtro %}
+                            <input type="hidden" name="estado" value="{{ estado_filtro }}" />
+                        {% endif %}
+                        {% if dias_seleccionados %}
+                            <input type="hidden" name="dias" value="{{ dias_seleccionados }}" />
+                        {% endif %}
+                        <div id="buscador-dropdown" class="hidden absolute left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 max-h-60 overflow-y-auto"></div>
+                    </div>
+                    <div class="flex flex-wrap gap-2 mt-2">
+                        <a href="#overview" data-ax-nav="overview" class="rounded-full px-3 py-1 text-xs font-medium bg-white border border-slate-200 text-slate-600 hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-200 transition-colors">Vista General</a>
+                        <a href="#users" data-ax-nav="users" class="rounded-full px-3 py-1 text-xs font-medium bg-white border border-slate-200 text-slate-600 hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-200 transition-colors">Usuarios</a>
+                        <a href="#services" data-ax-nav="services" class="rounded-full px-3 py-1 text-xs font-medium bg-white border border-slate-200 text-slate-600 hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-200 transition-colors">Solicitudes</a>
+                        <a href="#reportes" data-ax-nav="reportes" class="rounded-full px-3 py-1 text-xs font-medium bg-white border border-slate-200 text-slate-600 hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-200 transition-colors">Reportes</a>
+                        <a href="#settings" data-ax-nav="settings" class="rounded-full px-3 py-1 text-xs font-medium bg-white border border-slate-200 text-slate-600 hover:bg-emerald-50 hover:text-emerald-800 hover:border-emerald-200 transition-colors">Ajustes</a>
+                    </div>
+                </div>
+            </form>
+            <div class="flex items-center gap-4">
+                <div class="relative hidden md:inline-block">
+                    <button type="button" id="notification-btn" class="relative w-10 h-10 rounded-2xl bg-white border border-gray-100 flex items-center justify-center text-gray-600">
+                        {% if notificaciones %}
+                        <span class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-red-500 border-2 border-white"></span>
+                        {% endif %}
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                            <path d="M13.7 21a2 2 0 0 1-3.4 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                    <div id="notification-dropdown" class="fixed md:absolute top-20 md:top-full left-1/2 md:left-auto md:right-0 transform -translate-x-1/2 md:translate-x-0 md:mt-2 w-[calc(100vw-32px)] max-w-md mx-auto bg-white rounded-2xl shadow-2xl border border-slate-100 hidden z-50 overflow-hidden">
+                        <div class="p-4 border-b border-slate-100">
+                            <span class="text-sm font-semibold text-gray-900">Alertas del Sistema</span>
+                        </div>
+                        <div class="max-h-64 overflow-y-auto overflow-x-hidden ax-scrollbar">
+                            {% for alerta in alertas_sistema_cortas %}
+                            <div class="p-3 border-b border-gray-50 hover:bg-gray-50 text-left">
+                                <p class="font-semibold text-xs text-emerald-700">Sistema • {{ alerta.fecha_hora|date:"d/m/Y H:i" }}</p>
+                                <p class="text-sm text-gray-700 mt-0.5">{{ alerta.accion }}</p>
+                            </div>
+                            {% empty %}
+                            <div class="px-4 py-6 text-center text-sm text-gray-400">No hay alertas recientes en el sistema.</div>
+                            {% endfor %}
+                        </div>
+                        <div class="p-4 border-t border-slate-100 text-center">
+                            <button type="button" id="view-all-notifications" class="text-xs font-semibold text-emerald-700 hover:text-emerald-800">Ver todas las notificaciones</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="hidden md:flex items-center gap-3 bg-white border border-gray-100 rounded-2xl px-3 py-2">
+                    <div class="relative">
+                        <div class="w-9 h-9 rounded-2xl bg-[#dcf2eb] flex items-center justify-center text-[#0b2f24] font-bold text-sm">{% if user.get_full_name %}{{ user.get_full_name.0|upper }}{% else %}{{ user.username.0|upper }}{% endif %}</div>
+                        <span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white"></span>
+                    </div>
+                    <div class="leading-tight">
+                        <div class="text-sm font-semibold text-gray-800">{% if user.get_full_name %}{{ user.get_full_name }}{% else %}{{ user.username }}{% endif %}</div>
+                        <div class="text-[11px] text-gray-500">Administrador</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-7 flex items-start justify-between gap-6 flex-wrap">
+            <div id="panel-overview">
+                <div class="mt-7 flex items-start justify-between gap-6 flex-wrap">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Vista General</h1>
+                        <p class="text-sm text-gray-600 mt-1">Bienvenido de nuevo. Esto es lo que está pasando en Assist Care hoy.</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="relative inline-block">
+                            <button type="button" id="days-filter-btn" class="bg-white border border-gray-100 rounded-2xl px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2">
+                                {% if dias_seleccionados == 1 %}Hoy{% elif dias_seleccionados == 7 %}Últimos 7 días{% elif dias_seleccionados == 30 %}Últimos 30 días{% else %}Últimos {{ dias_seleccionados }} días{% endif %}
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M6 9l6 6 6-6"/>
+                                </svg>
+                            </button>
+                            <div id="days-dropdown" class="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-md border hidden z-50">
+                                <a href="?dias=1{% if search_query %}&search={{ search_query }}{% endif %}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}" class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-[#f2faf7] hover:text-emerald-800 transition-colors rounded-t-lg{% if dias_seleccionados == 1 %} text-emerald-700 font-semibold{% endif %}">Hoy</a>
+                                <a href="?dias=7{% if search_query %}&search={{ search_query }}{% endif %}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}" class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-[#f2faf7] hover:text-emerald-800 transition-colors{% if dias_seleccionados == 7 %} text-emerald-700 font-semibold{% endif %}">Últimos 7 días</a>
+                                <a href="?dias=30{% if search_query %}&search={{ search_query }}{% endif %}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}" class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-[#f2faf7] hover:text-emerald-800 transition-colors{% if dias_seleccionados == 30 %} text-emerald-700 font-semibold{% endif %}">Últimos 30 días</a>
+                                <a href="?dias=0{% if search_query %}&search={{ search_query }}{% endif %}{% if estado_filtro %}&estado={{ estado_filtro }}{% endif %}" class="block px-4 py-2.5 text-sm text-gray-700 hover:bg-[#f2faf7] hover:text-emerald-800 transition-colors rounded-b-lg{% if dias_seleccionados == 0 %} text-emerald-700 font-semibold{% endif %}">Este mes</a>
+                            </div>
+                        </div>
+                        <div class="relative">
+                            <button type="button" id="exportBtn" class="bg-[#0b2f24] text-white rounded-2xl px-4 py-2.5 text-sm font-semibold hover:bg-[#123d30] transition-colors flex items-center gap-2">
+                                Exportar Datos
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                    <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </button>
+                            <div id="exportMenu" class="hidden absolute right-0 mt-2 w-56 bg-white border border-gray-100 shadow-lg rounded-2xl overflow-hidden z-20">
+                                <a href="{% url 'exportar_servicios_csv' %}" class="flex items-center justify-between px-4 py-3 text-sm hover:bg-[#f2faf7]">
+                                    <span class="font-semibold text-gray-800">Descargar Excel (CSV)</span>
+                                    <span class="text-xs text-gray-500">.csv</span>
+                                </a>
+                                <a href="{% url 'exportar_servicios_pdf' %}" class="flex items-center justify-between px-4 py-3 text-sm hover:bg-[#f2faf7]">
+                                    <span class="font-semibold text-gray-800">Descargar PDF</span>
+                                    <span class="text-xs text-gray-500">.pdf</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <section class="mt-7 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+            <div id="card-usuarios-totales" class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 relative overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-md hover:-translate-y-1">
+                <div class="flex items-center justify-between">
+                    <div class="w-10 h-10 rounded-2xl bg-[#dcf2eb] flex items-center justify-center text-[#0b2f24]">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                            <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8"/>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <div class="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-full" data-period-label>{{ metricas_periodo_label }}</div>
+                </div>
+                <div class="mt-4 text-sm text-gray-500 font-semibold">Usuarios Totales</div>
+                <div class="text-4xl font-bold text-gray-900 mt-1" id="metric-total-usuarios">{{ total_usuarios }}</div>
+                <div class="mt-4 text-sm text-gray-600 font-medium">
+                    <span id="metric-usuarios-aprobados">{{ usuarios_aprobados }}</span> aprobados y <span id="metric-usuarios-rechazados">{{ usuarios_rechazados }}</span> rechazados
+                </div>
+            </div>
+
+            <div id="card-solicitudes-pendientes" class="bg-red-50 border border-red-100 rounded-3xl p-6 shadow-sm relative overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-md hover:-translate-y-1">
+                <div class="flex items-center justify-between">
+                    <div class="w-10 h-10 rounded-2xl bg-white/70 flex items-center justify-center text-red-600">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 9v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                            <path d="M12 17h.01" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+                            <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="text-[10px] font-bold tracking-wider uppercase px-2 py-1 rounded-full bg-red-600 text-white">Urgente</div>
+                </div>
+                <div class="mt-4 text-sm text-red-700 font-semibold">Solicitudes Pendientes</div>
+                <div class="text-4xl font-bold text-red-900 mt-1" id="metric-pendientes-verificar">{{ pendientes_verificar }}</div>
+                <div class="text-sm text-red-700 mt-2 font-medium">Perfiles pendientes de validación</div>
+            </div>
+
+            <div id="card-cuidadores-activos" class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 relative overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-md hover:-translate-y-1">
+                <div class="flex items-center justify-between">
+                    <div class="w-10 h-10 rounded-2xl bg-[#dcf2eb] flex items-center justify-center text-[#0b2f24]">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 21s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                            <path d="M10 12h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                            <path d="M12 10v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <div class="flex -space-x-2">
+                        <div class="w-9 h-9 rounded-full bg-emerald-200 border-2 border-white flex items-center justify-center text-[#0b2f24] font-bold text-xs">E</div>
+                        <div class="w-9 h-9 rounded-full bg-emerald-300 border-2 border-white flex items-center justify-center text-[#0b2f24] font-bold text-xs">M</div>
+                        <div class="w-9 h-9 rounded-full bg-emerald-400 border-2 border-white flex items-center justify-center text-white font-bold text-xs">+</div>
+                    </div>
+                </div>
+                <div class="mt-4 text-sm text-gray-500 font-semibold">Enfermeros Aprobados</div>
+                <div class="text-4xl font-bold text-gray-900 mt-1" id="metric-enfermeros-verificados">{{ enfermeros_verificados }}</div>
+                <div class="text-sm text-gray-600 mt-2 font-medium">
+                    <span id="metric-enfermeros-ocupados">{{ enfermeros_ocupados }}</span> con servicio activo · <span id="metric-ocupacion-enfermeros">{{ ocupacion_enfermeros }}</span>% ocupación
+                </div>
+            </div>
+
+            <div id="card-servicios-hoy" class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 relative overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-md hover:-translate-y-1">
+                <div class="flex items-center justify-between">
+                    <div class="w-10 h-10 rounded-2xl bg-[#dcf2eb] flex items-center justify-center text-[#0b2f24]">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="w-12 h-12 rounded-3xl bg-emerald-50 flex items-center justify-center text-emerald-700 opacity-60">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="mt-4 text-sm text-gray-500 font-semibold">Servicios Registrados</div>
+                <div class="text-4xl font-bold text-gray-900 mt-1" id="metric-servicios-total">{{ servicios_hoy }}</div>
+                <div class="text-sm text-gray-600 mt-2 font-medium" data-period-label>{{ metricas_periodo_label }}</div>
+            </div>
+                </section>
+
+                <section class="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                        <div class="flex items-center justify-between gap-3">
+                            <div>
+                                <div class="text-base font-bold text-gray-900">Solicitudes de Cuidado</div>
+                                <div class="text-xs text-gray-500 mt-1">Estado real de las peticiones creadas por pacientes.</div>
+                            </div>
+                            <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700" data-period-label>{{ metricas_periodo_label }}</span>
+                        </div>
+                        <div class="mt-5 grid grid-cols-2 gap-3">
+                            <div class="rounded-2xl bg-[#f2faf7] border border-slate-100 p-4">
+                                <div class="text-[11px] uppercase tracking-wider font-bold text-slate-400">Activas</div>
+                                <div class="mt-2 text-3xl font-bold text-slate-900" id="metric-peticiones-activas">{{ peticiones_activas }}</div>
+                            </div>
+                            <div class="rounded-2xl bg-[#f2faf7] border border-slate-100 p-4">
+                                <div class="text-[11px] uppercase tracking-wider font-bold text-slate-400">Asignadas</div>
+                                <div class="mt-2 text-3xl font-bold text-slate-900" id="metric-peticiones-asignadas">{{ peticiones_asignadas }}</div>
+                            </div>
+                            <div class="rounded-2xl bg-[#f2faf7] border border-slate-100 p-4">
+                                <div class="text-[11px] uppercase tracking-wider font-bold text-slate-400">Completadas</div>
+                                <div class="mt-2 text-3xl font-bold text-slate-900" id="metric-peticiones-completadas">{{ peticiones_completadas }}</div>
+                            </div>
+                            <div class="rounded-2xl bg-[#fdf2f2] border border-rose-100 p-4">
+                                <div class="text-[11px] uppercase tracking-wider font-bold text-rose-400">Canceladas</div>
+                                <div class="mt-2 text-3xl font-bold text-rose-700" id="metric-peticiones-canceladas">{{ peticiones_canceladas }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                        <div class="flex items-center justify-between gap-3">
+                            <div>
+                                <div class="text-base font-bold text-gray-900">Servicios y Operación</div>
+                                <div class="text-xs text-gray-500 mt-1">Seguimiento de ejecución del servicio.</div>
+                            </div>
+                            <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700" data-period-label>{{ metricas_periodo_label }}</span>
+                        </div>
+                        <div class="mt-5 space-y-3">
+                            <div class="rounded-2xl bg-[#f2faf7] border border-slate-100 p-4 flex items-center justify-between gap-4">
+                                <div>
+                                    <div class="text-[11px] uppercase tracking-wider font-bold text-slate-400">Activos</div>
+                                    <div class="mt-1 text-sm text-slate-500">En camino y en progreso</div>
+                                </div>
+                                <div class="text-3xl font-bold text-slate-900" id="metric-servicios-activos">{{ servicios_activos }}</div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="rounded-2xl bg-[#f8fafc] border border-slate-100 p-4">
+                                    <div class="text-[11px] uppercase tracking-wider font-bold text-slate-400">En camino</div>
+                                    <div class="mt-2 text-2xl font-bold text-slate-900" id="metric-servicios-en-camino">{{ servicios_en_camino }}</div>
+                                </div>
+                                <div class="rounded-2xl bg-[#f8fafc] border border-slate-100 p-4">
+                                    <div class="text-[11px] uppercase tracking-wider font-bold text-slate-400">En progreso</div>
+                                    <div class="mt-2 text-2xl font-bold text-slate-900" id="metric-servicios-en-progreso">{{ servicios_en_progreso }}</div>
+                                </div>
+                                <div class="rounded-2xl bg-emerald-50 border border-emerald-100 p-4">
+                                    <div class="text-[11px] uppercase tracking-wider font-bold text-emerald-500">Completados</div>
+                                    <div class="mt-2 text-2xl font-bold text-emerald-900" id="metric-servicios-completados">{{ servicios_completados }}</div>
+                                </div>
+                                <div class="rounded-2xl bg-rose-50 border border-rose-100 p-4">
+                                    <div class="text-[11px] uppercase tracking-wider font-bold text-rose-500">Cancelados</div>
+                                    <div class="mt-2 text-2xl font-bold text-rose-900" id="metric-servicios-cancelados">{{ servicios_cancelados }}</div>
+                                </div>
+                            </div>
+                            <div class="text-sm text-slate-600 font-medium">Tasa de finalización: <span id="metric-tasa-finalizacion">{{ tasa_finalizacion }}</span>%</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                        <div class="flex items-center justify-between gap-3">
+                            <div>
+                                <div class="text-base font-bold text-gray-900">Postulaciones y Calidad</div>
+                                <div class="text-xs text-gray-500 mt-1">Interés de enfermeros y satisfacción del servicio.</div>
+                            </div>
+                            <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700" data-period-label>{{ metricas_periodo_label }}</span>
+                        </div>
+                        <div class="mt-5 grid grid-cols-2 gap-3">
+                            <div class="rounded-2xl bg-[#f2faf7] border border-slate-100 p-4">
+                                <div class="text-[11px] uppercase tracking-wider font-bold text-slate-400">Postulaciones</div>
+                                <div class="mt-2 text-3xl font-bold text-slate-900" id="metric-total-postulaciones">{{ total_postulaciones }}</div>
+                            </div>
+                            <div class="rounded-2xl bg-[#f2faf7] border border-slate-100 p-4">
+                                <div class="text-[11px] uppercase tracking-wider font-bold text-slate-400">Pendientes</div>
+                                <div class="mt-2 text-3xl font-bold text-slate-900" id="metric-postulaciones-pendientes">{{ postulaciones_pendientes }}</div>
+                            </div>
+                            <div class="rounded-2xl bg-emerald-50 border border-emerald-100 p-4">
+                                <div class="text-[11px] uppercase tracking-wider font-bold text-emerald-500">Aceptadas</div>
+                                <div class="mt-2 text-3xl font-bold text-emerald-900" id="metric-postulaciones-aceptadas">{{ postulaciones_aceptadas }}</div>
+                            </div>
+                            <div class="rounded-2xl bg-[#f8fafc] border border-slate-100 p-4">
+                                <div class="text-[11px] uppercase tracking-wider font-bold text-slate-400">Calificación</div>
+                                <div class="mt-2 text-3xl font-bold text-slate-900" id="metric-promedio-calificacion">{{ promedio_calificacion }}</div>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center justify-between gap-4 text-sm">
+                            <span class="text-slate-600 font-medium">Tasa de aceptación: <span id="metric-tasa-aceptacion">{{ tasa_aceptacion_postulaciones }}</span>%</span>
+                            <span class="text-slate-500"><span id="metric-total-calificaciones">{{ total_calificaciones }}</span> calificaciones registradas</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="mt-8">
+                    <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                        <div class="flex items-start justify-between gap-6 flex-wrap">
+                            <div>
+                                <div class="text-base font-bold text-gray-900">Actividad de Cuidado</div>
+                                <div class="text-xs text-gray-500 mt-1">Monitoreo de servicios y cola de aprobación.</div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button type="button" data-ax-open="users" class="bg-white border border-gray-100 rounded-2xl px-3.5 py-2 text-sm font-semibold text-gray-700 hover:bg-[#f2faf7] transition-colors">Gestión de Usuarios</button>
+                                <button type="button" data-ax-open="services" class="bg-[#0b2f24] hover:bg-[#123d30] text-white text-sm font-semibold px-3.5 py-2 rounded-2xl transition-colors">Solicitudes de Servicio</button>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="bg-[#f2faf7] border border-gray-100 rounded-3xl p-4">
+                                <div class="text-xs text-gray-500 font-semibold">Usuarios Aprobados</div>
+                                <div class="text-3xl font-bold text-gray-900 mt-1">{{ usuarios_aprobados }}</div>
+                                <div class="text-xs text-gray-500 mt-1">{{ discapacitados_verificados }} pacientes y {{ enfermeros_verificados }} enfermeros aprobados</div>
+                            </div>
+                            <div class="bg-[#f2faf7] border border-gray-100 rounded-3xl p-4">
+                                <div class="text-xs text-gray-500 font-semibold">Solicitudes Activas</div>
+                                <div class="text-3xl font-bold text-gray-900 mt-1">{{ peticiones_activas }}</div>
+                                <div class="text-xs text-gray-500 mt-1">{{ servicios_activos }} servicios activos en operación</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+
+            <div id="panel-notificaciones" class="hidden">
+                <div class="mt-7 flex items-start justify-between gap-6 flex-wrap">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Notificaciones</h1>
+                        <p class="text-sm text-gray-600 mt-1">Historial completo de alertas y peticiones.</p>
+                    </div>
+                    {% if search_query %}
+                    <div class="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-2">
+                        <span class="text-sm text-emerald-800">Resultados para:</span>
+                        <span class="text-sm font-semibold text-emerald-900">"{{ search_query }}"</span>
+                        <a href="?{% if dias_seleccionados %}dias={{ dias_seleccionados }}{% endif %}" class="text-xs text-emerald-600 hover:text-emerald-800 ml-2">✕ Limpiar</a>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if search_query and resultados_busqueda %}
+                <div class="mt-7 bg-white rounded-3xl p-4 sm:p-6 shadow-sm border border-gray-100">
+                    <div class="text-base font-bold text-gray-900 mb-4">Resultados de Búsqueda ({{ resultados_busqueda|length }})</div>
+                    <div class="space-y-3">
+                        {% for item in resultados_busqueda %}
+                            {% if item.rol %}
+                            <div class="flex items-center gap-4 p-4 bg-[#f2faf7] rounded-2xl border border-gray-100">
+                                <div class="w-10 h-10 rounded-full bg-[#dcf2eb] flex items-center justify-center text-[#0b2f24] font-bold text-sm">
+                                    {{ item.username.0|upper|default:item.email.0|upper }}
+                                </div>
+                                <div class="flex-1">
+                                    <div class="text-sm font-semibold text-gray-900">{{ item.email }}</div>
+                                    <div class="text-xs text-gray-500">{{ item.get_rol_display|default:item.rol }} - {{ item.get_estado_display|default:item.estado }}</div>
+                                </div>
+                                <span class="text-xs text-gray-400">{{ item.fecha_creacion|date:"d/m/Y" }}</span>
+                            </div>
+                            {% else %}
+                            <div class="flex items-start gap-4 p-4 bg-[#f2faf7] rounded-2xl border border-gray-100">
+                                <div class="w-2 h-2 rounded-full bg-amber-500 mt-2 flex-shrink-0"></div>
+                                <div class="flex-1">
+                                    <div class="text-sm font-semibold text-gray-900">{{ item.titulo }}</div>
+                                    <div class="text-xs text-gray-500 mt-0.5">{{ item.descripcion|truncatechars:100 }}</div>
+                                </div>
+                                <span class="text-xs text-gray-400">{{ item.fecha_creacion|date:"d/m/Y H:i" }}</span>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="mt-7 bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                    <div class="flex items-start justify-between gap-6 flex-wrap mb-4">
+                        <div>
+                            <div class="text-base font-bold text-gray-900">Todas las Notificaciones</div>
+                            <div class="text-xs text-gray-500 mt-1">{{ todas_las_notificaciones|length }} registros</div>
+                        </div>
+                    </div>
+                    <div class="md:hidden">
+                        {% for nota in todas_las_notificaciones %}
+                            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 mb-4 w-full">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div class="flex items-start gap-3 min-w-0">
+                                        <div class="h-10 w-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-600 shrink-0">
+                                            {% if nota.discapacitado and nota.discapacitado.email %}{{ nota.discapacitado.email|slice:":1"|upper }}{% else %}AC{% endif %}
+                                        </div>
+                                        <div class="min-w-0">
+                                            <div class="text-sm font-semibold text-slate-900 truncate">
+                                                {% if nota.discapacitado %}
+                                                    {{ nota.discapacitado.nombre_completo|default:nota.discapacitado.email }}
+                                                {% else %}
+                                                    Registro
+                                                {% endif %}
+                                            </div>
+                                            <div class="text-xs text-slate-500 truncate">
+                                                {% if nota.discapacitado %}{{ nota.discapacitado.email }}{% else %}Sistema{% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="shrink-0">
+                                        {% if nota.estado == 'activa' %}
+                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 text-[11px] font-semibold">Activa</span>
+                                        {% elif nota.estado == 'asignada' %}
+                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-[11px] font-semibold">Asignada</span>
+                                        {% elif nota.estado == 'completada' %}
+                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 text-[11px] font-semibold">Completada</span>
+                                        {% elif nota.estado == 'cancelada' %}
+                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-red-50 text-red-700 text-[11px] font-semibold">Cancelada</span>
+                                        {% else %}
+                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-gray-50 text-gray-600 text-[11px] font-semibold">{{ nota.estado }}</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="mt-3 grid grid-cols-2 gap-3 text-xs">
+                                    <div class="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                                        <div class="text-[10px] uppercase tracking-wider font-semibold text-slate-400">Ciudad</div>
+                                        <div class="mt-1 font-semibold text-slate-800 truncate">{{ nota.ciudad }}</div>
+                                    </div>
+                                    <div class="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                                        <div class="text-[10px] uppercase tracking-wider font-semibold text-slate-400">Fecha</div>
+                                        <div class="mt-1 font-semibold text-slate-800">{{ nota.fecha_creacion|date:"d/m/Y H:i" }}</div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-3 text-sm font-semibold text-slate-900">{{ nota.titulo }}</div>
+                                <div class="mt-1 text-xs text-slate-600">{{ nota.descripcion }}</div>
+                            </div>
+                        {% empty %}
+                            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 mb-4 w-full text-sm text-slate-600 text-center">
+                                No hay notificaciones registradas.
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="hidden md:block overflow-x-auto">
+                        <table class="min-w-full text-sm">
+                            <thead class="text-left text-gray-500">
+                                <tr>
+                                    <th class="py-3 px-4 font-semibold">Estado</th>
+                                    <th class="py-3 px-4 font-semibold">Título</th>
+                                    <th class="py-3 px-4 font-semibold">Paciente</th>
+                                    <th class="py-3 px-4 font-semibold">Ciudad</th>
+                                    <th class="py-3 px-4 font-semibold">Fecha</th>
+                                    <th class="py-3 px-4 font-semibold">Descripción</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                {% for nota in todas_las_notificaciones %}
+                                <tr class="hover:bg-[#f2faf7]">
+                                    <td class="py-3 px-4">
+                                        {% if nota.estado == 'activa' %}
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 text-[11px] font-semibold">Activa</span>
+                                        {% elif nota.estado == 'asignada' %}
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-[11px] font-semibold">Asignada</span>
+                                        {% elif nota.estado == 'completada' %}
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 text-[11px] font-semibold">Completada</span>
+                                        {% elif nota.estado == 'cancelada' %}
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-red-50 text-red-700 text-[11px] font-semibold">Cancelada</span>
+                                        {% else %}
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-gray-50 text-gray-600 text-[11px] font-semibold">{{ nota.estado }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="py-3 px-4 font-medium text-gray-900">{{ nota.titulo }}</td>
+                                    <td class="py-3 px-4 text-gray-700">
+                                        {% if nota.discapacitado %}
+                                            {{ nota.discapacitado.nombre_completo|default:nota.discapacitado.email }}
+                                        {% else %}
+                                            <span class="text-gray-400">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="py-3 px-4 text-gray-600">{{ nota.ciudad }}</td>
+                                    <td class="py-3 px-4 text-gray-500">{{ nota.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                                    <td class="py-3 px-4 text-gray-600 max-w-xs truncate">{{ nota.descripcion }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="py-10 text-center text-sm text-gray-500">No hay notificaciones registradas.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="panel-usuarios" class="hidden w-full min-w-0">
+                <div class="mt-7 flex items-start justify-between gap-6 flex-wrap">
+                    <div class="min-w-0">
+                        <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Gestión de Usuarios</h1>
+                        <p class="text-sm text-gray-600 mt-1">Revisión de registros, perfiles y accesos.</p>
+                    </div>
+                </div>
+
+                <div class="mt-7 w-full min-w-0 bg-white rounded-3xl p-5 sm:p-6 shadow-sm border border-gray-100 overflow-hidden">
+                    <div class="flex items-start justify-between gap-6 flex-wrap">
+                        <div class="min-w-0 max-w-full">
+                            <div class="text-base font-bold text-gray-900">Listado General</div>
+                            <div class="text-xs text-gray-500 mt-1 break-words">Auditoría completa de pacientes, enfermeros y administradores.</div>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 w-full min-w-0 border border-gray-100 rounded-3xl overflow-hidden">
+                        <div class="px-4 sm:px-5 py-4 bg-[#f2faf7] flex items-center justify-between gap-3">
+                            <div class="font-bold text-gray-900 min-w-0">Usuarios registrados</div>
+                            <div class="text-xs text-gray-500 shrink-0">Total: {{ usuarios|length }}</div>
+                        </div>
+                        <div class="md:hidden divide-y divide-slate-100">
+                            {% for usuario in usuarios %}
+                                <div class="px-3 sm:px-4 py-3 min-w-0 overflow-hidden">
+                                    <button type="button" data-user-accordion="{{ usuario.id }}" class="w-full min-w-0 flex items-center justify-between gap-3">
+                                        <div class="flex items-center gap-3 min-w-0">
+                                            <div class="h-10 w-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-600 shrink-0">
+                                                {{ usuario.email|slice:":1"|upper }}
+                                            </div>
+                                            <div class="min-w-0 text-left">
+                                                <div class="text-sm font-semibold text-slate-900 truncate">{{ usuario.nombre_completo|default:usuario.email }}</div>
+                                                <div class="mt-0.5 inline-flex items-center px-2.5 py-1 rounded-full bg-slate-100 text-slate-800 text-[11px] font-semibold">
+                                                    {{ usuario.get_rol_display }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <svg data-user-accordion-icon="{{ usuario.id }}" width="16" height="16" viewBox="0 0 24 24" fill="none" class="text-slate-400 transition-transform shrink-0">
+                                            <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    </button>
+
+                                    <div data-user-panel="{{ usuario.id }}" class="hidden mt-3 min-w-0">
+                                        <div class="bg-slate-50 border border-slate-100 rounded-2xl p-3 text-xs text-slate-700 space-y-2">
+                                            <div class="flex items-center justify-between gap-3">
+                                                <span class="text-slate-500">Correo</span>
+                                                <span class="font-semibold text-slate-800 truncate text-right min-w-0 max-w-[65%]">{{ usuario.email }}</span>
+                                            </div>
+                                            <div class="flex items-center justify-between gap-3">
+                                                <span class="text-slate-500">Estado</span>
+                                                {% if usuario.is_active %}
+                                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 text-[11px] font-semibold">Activo</span>
+                                                {% else %}
+                                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 text-[11px] font-semibold">Inactivo</span>
+                                                {% endif %}
+                                            </div>
+                                            <div class="flex items-center justify-between gap-3">
+                                                <span class="text-slate-500">ID</span>
+                                                <span class="font-semibold text-slate-800 truncate text-right min-w-0 max-w-[65%]">#{{ usuario.id }}</span>
+                                            </div>
+                                            <div class="flex items-center justify-between gap-3">
+                                                <span class="text-slate-500">Registro</span>
+                                                <span class="font-semibold text-slate-800">{{ usuario.fecha_creacion|date:"d/m/Y H:i" }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% empty %}
+                                <div class="px-4 py-10 text-center text-sm text-gray-500">No hay usuarios registrados en el sistema actualmente.</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="hidden md:block overflow-x-auto">
+                            <table class="min-w-full text-sm">
+                                <thead class="text-left text-gray-500">
+                                    <tr>
+                                        <th class="py-3 px-4 font-semibold">Nombre Completo / Usuario</th>
+                                        <th class="py-3 px-4 font-semibold">Correo Electrónico</th>
+                                        <th class="py-3 px-4 font-semibold">Rol / Tipo</th>
+                                        <th class="py-3 px-4 font-semibold">Estado</th>
+                                        <th class="py-3 px-4 font-semibold">Fecha de Registro</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    {% for usuario in usuarios %}
+                                        <tr class="hover:bg-[#f2faf7]">
+                                            <td class="py-3 px-4">
+                                                <div class="font-semibold text-gray-900">
+                                                    {{ usuario.nombre_completo|default:usuario.email }}
+                                                </div>
+                                                <div class="text-xs text-gray-500">ID: {{ usuario.id }}</div>
+                                            </td>
+                                            <td class="py-3 px-4 text-gray-700">{{ usuario.email }}</td>
+                                            <td class="py-3 px-4">
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-gray-100 text-gray-800 text-[11px] font-semibold">
+                                                    {{ usuario.get_rol_display }}
+                                                </span>
+                                            </td>
+                                            <td class="py-3 px-4">
+                                                {% if usuario.is_active %}
+                                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-[#e1f5ee] text-emerald-800 text-[11px] font-semibold">Activo</span>
+                                                {% else %}
+                                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 text-[11px] font-semibold">Inactivo</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="py-3 px-4 text-gray-600">{{ usuario.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="5" class="py-10 text-center text-sm text-gray-500">No hay usuarios registrados en el sistema actualmente.</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="panel-solicitudes" class="hidden">
+                <div class="mt-7 flex items-start justify-between gap-6 flex-wrap">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Solicitudes de Servicio</h1>
+                        <p class="text-sm text-gray-600 mt-1">Monitoreo de servicios y cola de aprobación.</p>
+                    </div>
+                </div>
+
+                {% if usuarios_pendientes %}
+                    <div class="mt-7 bg-white rounded-2xl p-4 shadow-sm border border-slate-100 mb-4 w-full">
+                        <div class="flex items-start justify-between gap-4 flex-wrap">
+                            <div>
+                                <div class="text-base font-bold text-gray-900">Solicitudes Pendientes</div>
+                                <div class="text-xs text-gray-500 mt-1">Requiere revisión inmediata</div>
+                            </div>
+                            <div class="text-[10px] font-bold tracking-wider px-2 py-1 rounded-full bg-gray-900 text-white">EN VIVO</div>
+                        </div>
+
+                        <div class="mt-4 border border-slate-100 rounded-2xl overflow-hidden bg-white">
+                            <div class="px-4 py-3 bg-[#f2faf7] flex items-center justify-between">
+                                <div class="text-sm font-bold text-gray-900">Solicitudes de Registro Pendientes</div>
+                                <div class="text-xs font-semibold px-2 py-1 rounded-full bg-red-50 text-red-700">URGENTE</div>
+                            </div>
+                            <div class="md:hidden p-4">
+                                {% for u in usuarios_pendientes %}
+                                    <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 mb-4 w-full">
+                                        <div class="flex items-start justify-between gap-3">
+                                            <div class="flex items-start gap-3 min-w-0">
+                                                <div class="h-10 w-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-600 shrink-0">
+                                                    {{ u.email|slice:":1"|upper }}
+                                                </div>
+                                                <div class="min-w-0">
+                                                    <div class="text-sm font-semibold text-slate-900 truncate">{{ u.nombre_completo|default:u.email }}</div>
+                                                    <div class="text-xs text-slate-500 truncate">{{ u.email }}</div>
+                                                </div>
+                                            </div>
+                                            <div class="shrink-0">
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-[#e1f5ee] text-emerald-800 text-[11px] font-semibold">
+                                                    {% if u.rol == 'enfermero' %}Enfermero{% elif u.rol == 'admin' or u.rol == 'super_admin' %}Admin{% else %}Paciente{% endif %}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div class="mt-3 grid grid-cols-2 gap-3 text-xs">
+                                            <div class="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                                                <div class="text-[10px] uppercase tracking-wider font-semibold text-slate-400">Registro</div>
+                                                <div class="mt-1 font-semibold text-slate-800">{{ u.fecha_creacion|date:"d/m/Y H:i" }}</div>
+                                            </div>
+                                            <div class="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                                                <div class="text-[10px] uppercase tracking-wider font-semibold text-slate-400">Documentos</div>
+                                                <div class="mt-1 flex flex-wrap gap-2">
+                                                    {% if u.rol == 'enfermero' %}
+                                                        {% with perfil=u.perfil_enfermero %}
+                                                            {% if perfil.url_cedula %}
+                                                                <a href="{{ perfil.url_cedula.url }}" target="_blank" rel="noopener" data-doc-title="Cédula" class="ax-doc-link rounded-full px-3 py-1 text-xs font-medium bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors">Cédula</a>
+                                                            {% endif %}
+                                                            {% if perfil.url_tarjeta_profesional %}
+                                                                <a href="{{ perfil.tarjeta_profesional_url }}" target="_blank" rel="noopener" data-doc-title="Tarjeta profesional" class="ax-doc-link rounded-full px-3 py-1 text-xs font-medium bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors">Tarjeta</a>
+                                                            {% endif %}
+                                                        {% endwith %}
+                                                    {% elif u.rol == 'discapacitado' %}
+                                                        {% with perfil=u.perfil_discapacitado %}
+                                                            {% if perfil.url_cedula %}
+                                                                <a href="{{ perfil.url_cedula.url }}" target="_blank" rel="noopener" data-doc-title="Cédula" class="ax-doc-link rounded-full px-3 py-1 text-xs font-medium bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors">Cédula</a>
+                                                            {% endif %}
+                                                            {% if perfil.url_certificado_discapacidad %}
+                                                                <a href="{{ perfil.certificado_discapacidad_url }}" target="_blank" rel="noopener" data-doc-title="Certificado" class="ax-doc-link rounded-full px-3 py-1 text-xs font-medium bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors">Certificado</a>
+                                                            {% endif %}
+                                                        {% endwith %}
+                                                    {% else %}
+                                                        <span class="text-xs text-slate-400">Sin documentos</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex gap-3 mt-3">
+                                            <form method="POST" action="{% url 'aprobar_usuario' u.id %}" class="flex-1">
+                                                {% csrf_token %}
+                                                <button type="submit" class="w-full bg-[#006B3F] hover:bg-[#005230] text-white text-xs font-semibold py-2 rounded-xl transition-colors text-center">Aprobar</button>
+                                            </form>
+                                            <form method="POST" action="{% url 'rechazar_usuario' u.id %}" class="flex-1">
+                                                {% csrf_token %}
+                                                <button type="submit" class="w-full bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold py-2 rounded-xl transition-colors text-center">Rechazar</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="hidden md:block overflow-x-auto">
+                                <table class="min-w-full text-sm">
+                                    <thead class="text-left text-gray-500">
+                                        <tr>
+                                            <th class="py-3 px-4 font-semibold">Usuario</th>
+                                            <th class="py-3 px-4 font-semibold">Rol</th>
+                                            <th class="py-3 px-4 font-semibold">Fecha</th>
+                                            <th class="py-3 px-4 font-semibold">Documentos</th>
+                                            <th class="py-3 px-4 font-semibold text-right">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-100">
+                                        {% for u in usuarios_pendientes %}
+                                            <tr class="hover:bg-[#f2faf7]">
+                                                <td class="py-3 px-4">
+                                                    <div class="font-semibold text-gray-900">{{ u.nombre_completo|default:u.email }}</div>
+                                                    <div class="text-xs text-gray-500">{{ u.email }}</div>
+                                                </td>
+                                                <td class="py-3 px-4">
+                                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-[#e1f5ee] text-emerald-800 text-[11px] font-semibold">
+                                                        {% if u.rol == 'enfermero' %}Enfermero{% elif u.rol == 'admin' or u.rol == 'super_admin' %}Admin{% else %}Paciente{% endif %}
+                                                    </span>
+                                                </td>
+                                                <td class="py-3 px-4 text-gray-600">{{ u.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                                                <td class="py-3 px-4">
+                                                    <div class="flex flex-wrap gap-2">
+                                                        {% if u.rol == 'enfermero' %}
+                                                            {% with perfil=u.perfil_enfermero %}
+                                                                {% if perfil.url_cedula %}
+                                                                    <a href="{{ perfil.url_cedula.url }}" target="_blank" rel="noopener" data-doc-title="Cédula" class="ax-doc-link text-xs font-semibold px-3 py-1.5 rounded-2xl bg-white border border-gray-100 hover:bg-[#f2faf7] text-gray-800 transition-colors">Ver cédula</a>
+                                                                {% endif %}
+                                                                {% if perfil.url_tarjeta_profesional %}
+                                                                    <a href="{{ perfil.tarjeta_profesional_url }}" target="_blank" rel="noopener" data-doc-title="Tarjeta profesional" class="ax-doc-link text-xs font-semibold px-3 py-1.5 rounded-2xl bg-white border border-gray-100 hover:bg-[#f2faf7] text-gray-800 transition-colors">Ver tarjeta</a>
+                                                                {% endif %}
+                                                            {% endwith %}
+                                                        {% elif u.rol == 'discapacitado' %}
+                                                            {% with perfil=u.perfil_discapacitado %}
+                                                                {% if perfil.url_cedula %}
+                                                                    <a href="{{ perfil.url_cedula.url }}" target="_blank" rel="noopener" data-doc-title="Cédula" class="ax-doc-link text-xs font-semibold px-3 py-1.5 rounded-2xl bg-white border border-gray-100 hover:bg-[#f2faf7] text-gray-800 transition-colors">Ver cédula</a>
+                                                                {% endif %}
+                                                                {% if perfil.url_certificado_discapacidad %}
+                                                                    <a href="{{ perfil.certificado_discapacidad_url }}" target="_blank" rel="noopener" data-doc-title="Certificado" class="ax-doc-link text-xs font-semibold px-3 py-1.5 rounded-2xl bg-white border border-gray-100 hover:bg-[#f2faf7] text-gray-800 transition-colors">Ver certificado</a>
+                                                                {% endif %}
+                                                            {% endwith %}
+                                                        {% else %}
+                                                            <span class="text-xs text-gray-400">Sin documentos</span>
+                                                        {% endif %}
+                                                    </div>
+                                                </td>
+                                                <td class="py-3 px-4">
+                                                    <div class="flex items-center justify-end gap-2">
+                                                        <form method="POST" action="{% url 'aprobar_usuario' u.id %}">
+                                                            {% csrf_token %}
+                                                            <button type="submit" class="bg-[#006B3F] hover:bg-[#005230] text-white text-xs font-semibold px-3 py-1.5 rounded-2xl transition-colors">Aprobar</button>
+                                                        </form>
+                                                        <form method="POST" action="{% url 'rechazar_usuario' u.id %}">
+                                                            {% csrf_token %}
+                                                            <button type="submit" class="bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold px-3 py-1.5 rounded-2xl transition-colors">Rechazar</button>
+                                                        </form>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+
+                <div class="mt-7 bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                    <div class="flex items-start justify-between gap-6 flex-wrap">
+                        <div>
+                            <div class="text-base font-bold text-gray-900">Actividad de Cuidado</div>
+                            <div class="text-xs text-gray-500 mt-1">Monitoreo de servicios y cola de aprobación.</div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <a href="{% url 'exportar_servicios_csv' %}" class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-3.5 py-2 rounded-2xl transition-colors">Excel</a>
+                            <a href="{% url 'exportar_servicios_pdf' %}" class="bg-red-600 hover:bg-red-700 text-white text-sm font-semibold px-3.5 py-2 rounded-2xl transition-colors">PDF</a>
+                        </div>
+                    </div>
+
+                    <form method="GET" class="mt-5">
+                        {% if request.GET.dias %}
+                            <input type="hidden" name="dias" value="{{ request.GET.dias }}">
+                        {% endif %}
+                        <div class="w-full">
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-3 flex items-center text-slate-400">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                        <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8"/>
+                                        <path d="M20 20l-3.2-3.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                    </svg>
+                                </div>
+                                <input type="text" name="search" value="{{ busqueda|default:'' }}" placeholder="Buscar por paciente, enfermero o ID..." class="w-full bg-white border border-slate-200 rounded-2xl pl-10 pr-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-200" />
+                            </div>
+
+                            <div class="flex flex-wrap gap-2 mt-2">
+                                <select name="estado" class="rounded-full px-3 py-2 text-xs font-medium bg-slate-50 border border-slate-200 text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-200">
+                                    <option value="">Todos los estados</option>
+                                    <option value="En Camino" {% if estado_filtro == 'En Camino' %}selected{% endif %}>En Camino</option>
+                                    <option value="En Progreso" {% if estado_filtro == 'En Progreso' %}selected{% endif %}>En Progreso</option>
+                                    <option value="Completado" {% if estado_filtro == 'Completado' %}selected{% endif %}>Completado</option>
+                                    <option value="Cancelado" {% if estado_filtro == 'Cancelado' %}selected{% endif %}>Cancelado</option>
+                                </select>
+                                <button type="submit" class="rounded-full px-3 py-2 text-xs font-medium bg-[#0b2f24] hover:bg-[#123d30] text-white transition-colors">
+                                    Filtrar
+                                </button>
+                                <a href="{% url 'dashboard_admin' %}" class="rounded-full px-3 py-2 text-xs font-medium bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors">
+                                    Limpiar
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div class="mt-6 border border-gray-100 rounded-3xl overflow-hidden">
+                        <div class="px-4 sm:px-6 py-4 bg-[#f2faf7] flex items-center justify-between">
+                            <div class="font-bold text-gray-900">Monitoreo de servicios</div>
+                            <div class="text-xs text-gray-500">Página {{ servicios.number }} de {{ servicios.paginator.num_pages }}</div>
+                        </div>
+                        <div class="md:hidden p-4">
+                            {% for s in servicios %}
+                                <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 mb-4 w-full">
+                                    <button type="button" data-service-accordion="{{ s.id }}" class="w-full flex items-start justify-between gap-3 text-left">
+                                        <div class="flex items-start gap-3 min-w-0">
+                                            <div class="h-10 w-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-600 shrink-0">
+                                                {{ s.paciente.email|slice:":1"|upper }}
+                                            </div>
+                                            <div class="min-w-0">
+                                                <div class="text-sm font-semibold text-slate-900 truncate">{{ s.paciente.nombre_completo|default:s.paciente.email }}</div>
+                                                <div class="text-xs text-slate-500 truncate">{{ s.paciente.email }}</div>
+                                                <div class="text-xs text-slate-400 mt-1">Servicio #{{ s.id }}</div>
+                                            </div>
+                                        </div>
+                                        <div class="shrink-0 flex items-end gap-2">
+                                            {% if s.estado == 'Completado' %}
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-[#e1f5ee] text-emerald-800 text-[11px] font-semibold">Completado</span>
+                                            {% elif s.estado == 'En Progreso' %}
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 text-[11px] font-semibold">En Progreso</span>
+                                            {% elif s.estado == 'Cancelado' %}
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-red-50 text-red-700 text-[11px] font-semibold">Cancelado</span>
+                                            {% else %}
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-[11px] font-semibold">En Camino</span>
+                                            {% endif %}
+                                            <svg data-service-icon="{{ s.id }}" width="16" height="16" viewBox="0 0 24 24" fill="none" class="text-slate-400 mt-0.5 transition-transform">
+                                                <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                        </div>
+                                    </button>
+
+                                    <div data-service-panel="{{ s.id }}" class="hidden mt-3">
+                                        <div class="bg-slate-50 border border-slate-100 rounded-2xl p-3 text-xs text-slate-700 space-y-2">
+                                            <div class="flex items-center justify-between gap-3">
+                                                <span class="text-slate-500">Enfermero</span>
+                                                <span class="font-semibold text-slate-800 truncate">
+                                                    {% if s.enfermero %}
+                                                        {{ s.enfermero.nombre_completo|default:s.enfermero.email }}
+                                                    {% else %}
+                                                        Sin asignar
+                                                    {% endif %}
+                                                </span>
+                                            </div>
+                                            <div class="flex items-center justify-between gap-3">
+                                                <span class="text-slate-500">Fecha</span>
+                                                <span class="font-semibold text-slate-800">{{ s.fecha_creacion|date:"d/m/Y H:i" }}</span>
+                                            </div>
+                                            <div class="pt-1 space-y-1.5">
+                                                <div class="text-slate-500">Origen</div>
+                                                <div class="font-semibold text-slate-800 break-words">{{ s.origen }}</div>
+                                            </div>
+                                            <div class="pt-1 space-y-1.5">
+                                                <div class="text-slate-500">Destino</div>
+                                                <div class="font-semibold text-slate-800 break-words">{{ s.destino }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% empty %}
+                                <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 mb-4 w-full text-sm text-slate-600 text-center">
+                                    No hay servicios para mostrar.
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="hidden md:block overflow-x-auto">
+                            <table class="min-w-full text-sm">
+                                <thead class="text-left text-gray-500">
+                                    <tr>
+                                        <th class="py-3 px-4 font-semibold">ID</th>
+                                        <th class="py-3 px-4 font-semibold">Paciente</th>
+                                        <th class="py-3 px-4 font-semibold">Enfermero</th>
+                                        <th class="py-3 px-4 font-semibold">Fecha</th>
+                                        <th class="py-3 px-4 font-semibold">Estado</th>
+                                        <th class="py-3 px-4 font-semibold">Origen</th>
+                                        <th class="py-3 px-4 font-semibold">Destino</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    {% for s in servicios %}
+                                        <tr class="hover:bg-[#f2faf7]">
+                                            <td class="py-3 px-4 font-semibold text-gray-900">#{{ s.id }}</td>
+                                            <td class="py-3 px-4 text-gray-700">{{ s.paciente.nombre_completo|default:s.paciente.email }}</td>
+                                            <td class="py-3 px-4 text-gray-700">
+                                                {% if s.enfermero %}
+                                                    {{ s.enfermero.nombre_completo|default:s.enfermero.email }}
+                                                {% else %}
+                                                    <span class="text-gray-400">Sin asignar</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="py-3 px-4 text-gray-600">{{ s.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                                            <td class="py-3 px-4">
+                                                {% if s.estado == 'Completado' %}
+                                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-[#e1f5ee] text-emerald-800 text-[11px] font-semibold">Completado</span>
+                                                {% elif s.estado == 'En Progreso' %}
+                                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 text-[11px] font-semibold">En Progreso</span>
+                                                {% elif s.estado == 'Cancelado' %}
+                                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-red-50 text-red-700 text-[11px] font-semibold">Cancelado</span>
+                                                {% else %}
+                                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-[11px] font-semibold">En Camino</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="py-3 px-4 text-gray-600">{{ s.origen }}</td>
+                                            <td class="py-3 px-4 text-gray-600">{{ s.destino }}</td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="7" class="py-10 text-center text-sm text-gray-500">No hay servicios para mostrar.</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% if servicios.paginator.num_pages > 1 %}
+                            {% with qsearch=busqueda|urlencode qestado=estado_filtro|urlencode qdias=request.GET.dias|default:'30' %}
+                                <div class="px-4 sm:px-6 py-4 bg-white border-t border-gray-100 flex items-center justify-between gap-3">
+                                    <a
+                                        {% if servicios.has_previous %}
+                                            href="?search={{ qsearch }}&estado={{ qestado }}&dias={{ qdias }}&servicios_page={{ servicios.previous_page_number }}#services"
+                                        {% endif %}
+                                        class="px-3 py-2 rounded-2xl border border-gray-200/70 bg-white text-xs font-semibold text-gray-700 {% if not servicios.has_previous %}opacity-50 cursor-not-allowed{% else %}hover:bg-gray-50{% endif %} transition-colors"
+                                    >
+                                        Anterior
+                                    </a>
+                                    <div class="flex items-center gap-1">
+                                        {% for num in servicios.paginator.page_range %}
+                                            {% if num == servicios.number %}
+                                                <span class="px-3 py-2 rounded-2xl bg-[#0b2f24] text-white text-xs font-semibold">{{ num }}</span>
+                                            {% else %}
+                                                <a href="?search={{ qsearch }}&estado={{ qestado }}&dias={{ qdias }}&servicios_page={{ num }}#services" class="px-3 py-2 rounded-2xl border border-gray-200/70 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors">{{ num }}</a>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    <a
+                                        {% if servicios.has_next %}
+                                            href="?search={{ qsearch }}&estado={{ qestado }}&dias={{ qdias }}&servicios_page={{ servicios.next_page_number }}#services"
+                                        {% endif %}
+                                        class="px-3 py-2 rounded-2xl border border-gray-200/70 bg-white text-xs font-semibold text-gray-700 {% if not servicios.has_next %}opacity-50 cursor-not-allowed{% else %}hover:bg-gray-50{% endif %} transition-colors"
+                                    >
+                                        Siguiente
+                                    </a>
+                                </div>
+                            {% endwith %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div id="panel-ajustes" class="hidden">
+                <div class="mt-7 flex items-start justify-between gap-6 flex-wrap">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Ajustes</h1>
+                        <p class="text-sm text-gray-600 mt-1">Configuración administrativa y seguridad.</p>
+                    </div>
+                </div>
+
+                {% if can_manage_staff %}
+                    <div class="mt-7 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                            <div class="text-base font-bold text-gray-900">Control Operativo</div>
+                            <div class="text-xs text-gray-500 mt-1">Parámetros globales de operación y políticas de verificación.</div>
+                            <form method="POST" action="" class="mt-5 space-y-6">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="guardar_ajustes">
+                                <div>
+                                    <div class="text-sm font-bold text-gray-900">Control de Operaciones</div>
+                                    <div class="text-xs text-gray-500 mt-1">Configura los parámetros de apoyo solidario para los voluntarios y los fondos reservados para la infraestructura del sistema.</div>
+                                    <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="text-xs font-semibold text-gray-600">Auxilio económico por hora (Apoyo al Voluntario)</label>
+                                            <input
+                                                type="number"
+                                                name="precio_hora_cop"
+                                                min="0"
+                                                step="100"
+                                                value="{{ config_tarifas.precio_hora|default_if_none:'' }}"
+                                                placeholder="12000"
+                                                class="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600"
+                                            >
+                                        </div>
+                                        <div>
+                                            <label class="text-xs font-semibold text-gray-600">% de Retención Solidaria (Sostenimiento del Software)</label>
+                                            <input
+                                                type="number"
+                                                name="comision_plataforma_pct"
+                                                min="0"
+                                                max="100"
+                                                step="0.01"
+                                                value="{{ config_tarifas.comision|default_if_none:'' }}"
+                                                class="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-600/30 focus:border-emerald-600"
+                                            >
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="pt-5 border-t border-gray-100">
+                                    <div class="text-sm font-bold text-gray-900">Políticas de Verificación</div>
+                                    <div class="text-xs text-gray-500 mt-1">Controla los requisitos mínimos para activar cuidadores en la plataforma.</div>
+                                    <div class="mt-4 space-y-3">
+                                        <label class="flex items-center justify-between gap-4 p-3 rounded-2xl border border-gray-100 bg-gray-50">
+                                            <div>
+                                                <div class="text-sm font-semibold text-gray-800">Verificación obligatoria de antecedentes judiciales</div>
+                                                <div class="text-xs text-gray-500 mt-0.5">Restringe la activación del cuidador si no cuenta con el soporte requerido.</div>
+                                            </div>
+                                            <span class="relative inline-flex items-center">
+                                                <input type="checkbox" name="verificacion_antecedentes_obligatoria" class="sr-only peer" {% if config_tarifas.antecedentes %}checked{% endif %}>
+                                                <span class="w-11 h-6 bg-gray-200 peer-checked:bg-emerald-600 rounded-full transition-colors"></span>
+                                                <span class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform duration-200 peer-checked:translate-x-5"></span>
+                                            </span>
+                                        </label>
+                                        <label class="flex items-center justify-between gap-4 p-3 rounded-2xl border border-gray-100 bg-gray-50">
+                                            <div>
+                                                <div class="text-sm font-semibold text-gray-800">Validación obligatoria de diplomas médicos</div>
+                                                <div class="text-xs text-gray-500 mt-0.5">Exige documentos profesionales antes de permitir postulaciones.</div>
+                                            </div>
+                                            <span class="relative inline-flex items-center">
+                                                <input type="checkbox" name="validacion_diplomas_obligatoria" class="sr-only peer" {% if config_tarifas.diplomas %}checked{% endif %}>
+                                                <span class="w-11 h-6 bg-gray-200 peer-checked:bg-emerald-600 rounded-full transition-colors"></span>
+                                                <span class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform duration-200 peer-checked:translate-x-5"></span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="w-full bg-[#0b2f24] hover:bg-[#123d30] text-white text-sm font-semibold px-4 py-3 rounded-2xl transition-colors">
+                                    Guardar ajustes
+                                </button>
+                            </form>
+                        </div>
+
+                        <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                            <div class="text-base font-bold text-gray-900">Gestión de Accesos</div>
+                            <div class="text-xs text-gray-500 mt-1">Crea nuevas credenciales administrativas para operar Assist Care.</div>
+                            <form method="POST" action="{% url 'crear_administrador' %}" class="mt-5 space-y-3">
+                                {% csrf_token %}
+                                <div>
+                                    <label class="text-xs font-semibold text-gray-600">Correo</label>
+                                    {{ admin_form.correo }}
+                                    {% if admin_form.correo.errors %}<div class="text-xs text-red-600 mt-1">{{ admin_form.correo.errors }}</div>{% endif %}
+                                </div>
+                                <div>
+                                    <label class="text-xs font-semibold text-gray-600">Contraseña</label>
+                                    {{ admin_form.password }}
+                                    {% if admin_form.password.errors %}<div class="text-xs text-red-600 mt-1">{{ admin_form.password.errors }}</div>{% endif %}
+                                </div>
+                                <div>
+                                    <label class="text-xs font-semibold text-gray-600">Confirmar contraseña</label>
+                                    {{ admin_form.confirm_password }}
+                                    {% if admin_form.confirm_password.errors %}<div class="text-xs text-red-600 mt-1">{{ admin_form.confirm_password.errors }}</div>{% endif %}
+                                </div>
+                                <button type="submit" class="w-full bg-[#0b2f24] hover:bg-[#123d30] text-white text-sm font-semibold px-4 py-3 rounded-2xl transition-colors">
+                                    Crear administrador
+                                </button>
+                            </form>
+                        </div>
+
+                        <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 lg:col-span-2">
+                            <div class="flex items-start justify-between gap-6 flex-wrap">
+                                <div>
+                                    <div class="text-base font-bold text-gray-900">Acciones del Sistema</div>
+                                    <div class="text-xs text-gray-500 mt-1">Mantenimiento y operaciones ejecutivas.</div>
+                                </div>
+                            </div>
+                            <div class="mt-5 flex flex-col sm:flex-row gap-3">
+                                <a href="?action=download_backup" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-colors">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                        <polyline points="7 10 12 15 17 10"/>
+                                        <line x1="12" y1="15" x2="12" y2="3"/>
+                                    </svg>
+                                    Descargar Backup de Base de Datos
+                                </a>
+                                <button id="btn-disparar-limpieza" type="button" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-gray-800 hover:bg-gray-900 text-white text-sm font-semibold transition-colors">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="3 6 5 6 21 6"/>
+                                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                                        <path d="M10 11v6"/>
+                                        <path d="M14 11v6"/>
+                                        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                                    </svg>
+                                    Limpiar Historial de Alertas Viejas
+                                </button>
+                            </div>
+                            <div class="mt-3 text-xs text-gray-500">La limpieza elimina alertas anteriores a 90 días.</div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="mt-7 bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                        <div class="text-sm text-gray-500">No tienes permisos para administrar staff.</div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div id="panel-reportes" class="hidden">
+                <div class="mt-7 flex items-start justify-between gap-6 flex-wrap">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Reportes</h1>
+                        <p class="text-sm text-gray-600 mt-1">Historial de reportes generados por el sistema.</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <a href="?export=excel" class="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition-colors">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/>
+                                <path d="M14 2v6h6"/>
+                            </svg>
+                            Exportar Excel
+                        </a>
+                        <a href="?export=pdf" class="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white text-sm font-semibold rounded-xl transition-colors">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/>
+                                <path d="M14 2v6h6"/>
+                                <path d="M10 9H8"/>
+                                <path d="M16 13H8"/>
+                                <path d="M16 17H8"/>
+                            </svg>
+                            Exportar PDF
+                        </a>
+                    </div>
+                </div>
+
+                <div class="mt-7 space-y-3">
+                    {% for reporte in reportes %}
+                    <div class="p-4 bg-gray-50 rounded-xl border border-gray-100 hover:shadow-sm transition-all">
+                        <div class="flex justify-between items-start gap-4 mb-2">
+                            <h4 class="font-bold text-gray-800 text-base">{{ reporte.titulo }}</h4>
+                            <span class="px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 whitespace-nowrap">
+                                {{ reporte.get_tipo_display }}
+                            </span>
+                        </div>
+                        <p class="text-sm text-gray-600 mb-3">{{ reporte.descripcion }}</p>
+                        <div class="flex items-center gap-4 text-xs text-gray-400">
+                            <span>Por: {{ reporte.usuario_admin.username|default:'Sistema' }}</span>
+                            <span>{{ reporte.fecha_creacion|date:"d/m/Y H:i" }}</span>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="bg-white rounded-3xl p-10 shadow-sm border border-gray-100 text-center">
+                        <div class="text-gray-400 text-sm">No hay reportes registrados en el sistema.</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if reportes.paginator.num_pages > 1 %}
+                    {% with qsearch=busqueda|urlencode qestado=estado_filtro|urlencode qdias=request.GET.dias|default:'30' %}
+                        <div class="mt-6 flex items-center justify-between gap-3">
+                            <a
+                                {% if reportes.has_previous %}
+                                    href="?search={{ qsearch }}&estado={{ qestado }}&dias={{ qdias }}&reportes_page={{ reportes.previous_page_number }}#reportes"
+                                {% endif %}
+                                class="px-3 py-2 rounded-2xl border border-gray-200/70 bg-white text-xs font-semibold text-gray-700 {% if not reportes.has_previous %}opacity-50 cursor-not-allowed{% else %}hover:bg-gray-50{% endif %} transition-colors"
+                            >
+                                Anterior
+                            </a>
+                            <div class="flex items-center gap-1">
+                                {% for num in reportes.paginator.page_range %}
+                                    {% if num == reportes.number %}
+                                        <span class="px-3 py-2 rounded-2xl bg-[#0b2f24] text-white text-xs font-semibold">{{ num }}</span>
+                                    {% else %}
+                                        <a href="?search={{ qsearch }}&estado={{ qestado }}&dias={{ qdias }}&reportes_page={{ num }}#reportes" class="px-3 py-2 rounded-2xl border border-gray-200/70 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors">{{ num }}</a>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            <a
+                                {% if reportes.has_next %}
+                                    href="?search={{ qsearch }}&estado={{ qestado }}&dias={{ qdias }}&reportes_page={{ reportes.next_page_number }}#reportes"
+                                {% endif %}
+                                class="px-3 py-2 rounded-2xl border border-gray-200/70 bg-white text-xs font-semibold text-gray-700 {% if not reportes.has_next %}opacity-50 cursor-not-allowed{% else %}hover:bg-gray-50{% endif %} transition-colors"
+                            >
+                                Siguiente
+                            </a>
+                        </div>
+                    {% endwith %}
+                {% endif %}
+            </div>
+
+            <div id="panel-alertas-sistema" class="hidden">
+                <div class="mt-7 flex items-start justify-between gap-6 flex-wrap">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Historial de Alertas</h1>
+                        <p class="text-sm text-gray-600 mt-1">Registro completo de actividad del sistema.</p>
+                    </div>
+                </div>
+
+                <div class="mt-7 space-y-3">
+                    {% for alerta in historial_alertas_completo %}
+                    <div class="bg-white rounded-xl border border-gray-100 p-4 hover:shadow-sm transition-all">
+                        <div class="flex items-start gap-4">
+                            <div class="w-2 h-2 rounded-full bg-emerald-500 mt-2 flex-shrink-0"></div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between gap-3 mb-1">
+                                    <div class="text-sm font-semibold text-gray-900">
+                                        {% if alerta.usuario_admin %}{{ alerta.usuario_admin.email }}{% else %}Sistema{% endif %}
+                                    </div>
+                                    <div class="text-[11px] text-gray-500 whitespace-nowrap">{{ alerta.fecha_hora|date:"d/m/Y H:i" }}</div>
+                                </div>
+                                <div class="text-sm text-gray-700">{{ alerta.accion }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="bg-white rounded-3xl p-10 shadow-sm border border-gray-100 text-center">
+                        <div class="text-gray-400 text-sm">No hay alertas registradas en el sistema.</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div id="panel-eliminacion" class="hidden bg-white rounded-xl p-6 shadow-sm border">
+                <h2 class="text-xl font-bold text-gray-900 mb-2">Historial de Eliminación y Archivo</h2>
+                <p class="text-sm text-gray-500 mb-6">Registro de auditoría de alertas antiguas removidas del flujo principal.</p>
+                <div class="space-y-3">
+                    {% for alr in alertas_eliminadas_historial %}
+                        <div class="p-4 bg-gray-50 rounded-lg border border-gray-100 flex justify-between items-center gap-4">
+                            <div class="min-w-0">
+                                <p class="text-sm text-gray-700 font-medium break-words">{{ alr.accion }}</p>
+                                <p class="text-xs text-gray-400 mt-1">Eliminado/Archivado automáticamente</p>
+                            </div>
+                            <span class="text-xs text-gray-400 font-mono whitespace-nowrap">{{ alr.fecha_hora|date:"d/m/Y H:i" }}</span>
+                        </div>
+                    {% empty %}
+                        <p class="text-center text-sm text-gray-400 py-8">La papelera de alertas está vacía.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div id="panel-soporte" class="hidden">
+                <div class="mt-7 flex items-start justify-between gap-6 flex-wrap">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Soporte</h1>
+                        <p class="text-sm text-gray-600 mt-1">Canales de ayuda y contacto del sistema.</p>
+                    </div>
+                </div>
+
+                <div class="mt-7 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                        <div class="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center mb-4">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#006B3F" stroke-width="1.8">
+                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2Z"/>
+                                <path d="M22 6l-10 7L2 6"/>
+                            </svg>
+                        </div>
+                        <h3 class="font-bold text-gray-900 mb-2">Correo Electrónico</h3>
+                        <p class="text-sm text-gray-600 mb-3">Para consultas generales y solicitudes de información.</p>
+                        <a href="mailto:assistcoresoporte@gmail.com" class="text-sm font-semibold text-emerald-700 hover:text-emerald-800">assistcoresoporte@gmail.com</a>
+                    </div>
+
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                        <div class="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center mb-4">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#006B3F" stroke-width="1.8">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/>
+                            </svg>
+                        </div>
+                        <h3 class="font-bold text-gray-900 mb-2">Chat en Línea</h3>
+                        <p class="text-sm text-gray-600 mb-3">Atención inmediata en horario laboral.</p>
+                        <span class="text-sm font-semibold text-gray-500">Lunes a Viernes 8:00 - 18:00</span>
+                    </div>
+
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                        <div class="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center mb-4">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#006B3F" stroke-width="1.8">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/>
+                                <path d="M14 2v6h6"/>
+                                <path d="M16 13H8"/>
+                                <path d="M16 17H8"/>
+                            </svg>
+                        </div>
+                        <h3 class="font-bold text-gray-900 mb-2">Documentación</h3>
+                        <p class="text-sm text-gray-600 mb-3">Manuales técnicos y guías de usuario.</p>
+                        <span class="text-sm font-semibold text-gray-500">Próximamente disponible</span>
+                    </div>
+                </div>
+
+                <div class="mt-7 bg-[#f2faf7] rounded-2xl p-6 border border-gray-100">
+                    <h3 class="font-bold text-gray-900 mb-3">¿Necesitas ayuda urgente?</h3>
+                    <p class="text-sm text-gray-600 mb-4">Si experimentas problemas críticos con el sistema, contacta directamente a nuestro equipo de soporte técnico.</p>
+                    <input type="hidden" id="admin-emergency-csrf-token" value="{{ csrf_token }}">
+                    <button type="button" id="btn-contactar-soporte-urgente" class="inline-flex items-center gap-2 px-4 py-2 bg-[#0b2f24] hover:bg-[#123d30] text-white text-sm font-semibold rounded-xl transition-colors">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/>
+                        </svg>
+                        Contactar Soporte Urgente
+                    </button>
+                </div>
+            </div>
+
+        <div class="mt-10 border-t border-gray-200 pt-4 flex items-center justify-between text-xs text-gray-500 flex-wrap gap-2">
+            <div class="flex items-center gap-3">
+                <span class="inline-flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-600"></span>
+                    Sistema Operativo
+                </span>
+                <span class="text-gray-300">|</span>
+                <span>v2.4.0-stable</span>
+            </div>
+            <div>© {% now "Y" %} Assist Care. Conexión Humana. Confianza Orgánica.</div>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const navLinks = Array.from(document.querySelectorAll('[data-ax-nav]'));
+            const exportBtn = document.getElementById('exportBtn');
+            const exportMenu = document.getElementById('exportMenu');
+            const newReportBtn = document.getElementById('newReportBtn');
+            const viewAllNotificationsBtn = document.getElementById('view-all-notifications');
+            const notificationBtn = document.getElementById('notification-btn');
+            const notificationDropdown = document.getElementById('notification-dropdown');
+            const notificationBell = document.getElementById('notification-bell');
+            const notificationDropdownMobile = document.getElementById('notification-dropdown-mobile');
+            const viewAllNotificationsBtnMobile = document.getElementById('view-all-notifications-mobile');
+            const daysFilterBtn = document.getElementById('days-filter-btn');
+            const daysDropdown = document.getElementById('days-dropdown');
+            const buscadorInput = document.getElementById('buscador-input');
+            const buscadorDropdown = document.getElementById('buscador-dropdown');
+            const buscadorWrapper = document.getElementById('buscador-wrapper');
+            const adminEmergencyCsrfToken = document.getElementById('admin-emergency-csrf-token');
+            const btnContactarSoporteUrgente = document.getElementById('btn-contactar-soporte-urgente');
+            const dropdownHideTimers = new WeakMap();
+            const cardUsuariosTotales = document.getElementById('card-usuarios-totales');
+            const cardSolicitudesPendientes = document.getElementById('card-solicitudes-pendientes');
+            const cardCuidadoresActivos = document.getElementById('card-cuidadores-activos');
+            const cardServiciosHoy = document.getElementById('card-servicios-hoy');
+            const mobileOverlay = document.getElementById('admin-sidebar-overlay');
+            const mobileDrawer = document.getElementById('admin-sidebar-drawer');
+            const mobileOpenBtn = document.getElementById('btn-open-admin-sidebar');
+            const mobileCloseBtn = document.getElementById('btn-close-admin-sidebar');
+            let mobileDrawerHideTimer = null;
+            const panels = {
+                overview: document.getElementById('panel-overview'),
+                notifications: document.getElementById('panel-notificaciones'),
+                users: document.getElementById('panel-usuarios'),
+                services: document.getElementById('panel-solicitudes'),
+                reportes: document.getElementById('panel-reportes'),
+                alertas: document.getElementById('panel-alertas-sistema'),
+                eliminacion: document.getElementById('panel-eliminacion'),
+                soporte: document.getElementById('panel-soporte'),
+                settings: document.getElementById('panel-ajustes'),
+            };
+            const quickOpen = Array.from(document.querySelectorAll('[data-ax-open]'));
+            const rutasDisponibles = [
+                { nombre: 'Vista General / Dashboard', id: '#panel-overview', btn: 'sidebar-overview', key: 'overview' },
+                { nombre: 'Gestión de Usuarios (Cuidadores y Clientes)', id: '#panel-usuarios', btn: 'sidebar-usuarios', key: 'users' },
+                { nombre: 'Solicitudes de Servicio (Cola de Aprobación)', id: '#panel-solicitudes', btn: 'sidebar-solicitudes', key: 'services' },
+                { nombre: 'Ajustes de Sostenibilidad y Tarifas', id: '#panel-ajustes', btn: 'sidebar-settings', key: 'settings' },
+                { nombre: 'Historial de Reportes de Incidencias', id: '#panel-reportes', btn: 'sidebar-reportes', key: 'reportes' },
+            ];
+
+            function openMobileDrawer() {
+                if (!mobileOverlay || !mobileDrawer) return;
+                if (mobileDrawerHideTimer) {
+                    window.clearTimeout(mobileDrawerHideTimer);
+                    mobileDrawerHideTimer = null;
+                }
+                mobileOverlay.classList.remove('hidden');
+                mobileDrawer.classList.remove('hidden');
+                mobileDrawer.classList.remove('ax-ui-drawer-closing');
+                requestAnimationFrame(() => {
+                    mobileOverlay.classList.add('ax-ui-overlay-visible');
+                    mobileDrawer.classList.add('ax-ui-drawer-visible');
+                    mobileOverlay.classList.remove('opacity-0', 'pointer-events-none');
+                    mobileOverlay.classList.add('opacity-100', 'pointer-events-auto');
+                    mobileDrawer.classList.remove('-translate-x-full');
+                    mobileDrawer.classList.add('translate-x-0');
+                });
+                document.body.classList.add('overflow-hidden');
+            }
+
+            function closeMobileDrawer() {
+                if (!mobileOverlay || !mobileDrawer) return;
+                mobileOverlay.classList.remove('ax-ui-overlay-visible');
+                mobileDrawer.classList.remove('ax-ui-drawer-visible');
+                mobileDrawer.classList.add('ax-ui-drawer-closing');
+                mobileOverlay.classList.remove('opacity-100', 'pointer-events-auto');
+                mobileOverlay.classList.add('opacity-0', 'pointer-events-none');
+                mobileDrawer.classList.add('-translate-x-full');
+                mobileDrawer.classList.remove('translate-x-0');
+                mobileDrawerHideTimer = window.setTimeout(() => {
+                    mobileOverlay.classList.add('hidden');
+                    mobileDrawer.classList.add('hidden');
+                    mobileDrawer.classList.remove('ax-ui-drawer-closing');
+                    mobileDrawerHideTimer = null;
+                }, 210);
+                document.body.classList.remove('overflow-hidden');
+            }
+
+            if (mobileOpenBtn && mobileCloseBtn && mobileOverlay && mobileDrawer) {
+                mobileOpenBtn.addEventListener('click', openMobileDrawer);
+                mobileCloseBtn.addEventListener('click', closeMobileDrawer);
+                mobileOverlay.addEventListener('click', closeMobileDrawer);
+                mobileDrawer.querySelectorAll('[data-ax-nav]').forEach((a) => {
+                    a.addEventListener('click', closeMobileDrawer);
+                });
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') closeMobileDrawer();
+                });
+            }
+
+            const userAccordionButtons = Array.from(document.querySelectorAll('[data-user-accordion]'));
+            const metricsEls = {
+                total_usuarios: document.getElementById('metric-total-usuarios'),
+                pendientes_verificar: document.getElementById('metric-pendientes-verificar'),
+                usuarios_aprobados: document.getElementById('metric-usuarios-aprobados'),
+                usuarios_rechazados: document.getElementById('metric-usuarios-rechazados'),
+                enfermeros_verificados: document.getElementById('metric-enfermeros-verificados'),
+                enfermeros_ocupados: document.getElementById('metric-enfermeros-ocupados'),
+                ocupacion_enfermeros: document.getElementById('metric-ocupacion-enfermeros'),
+                servicios_total: document.getElementById('metric-servicios-total'),
+                servicios_activos: document.getElementById('metric-servicios-activos'),
+                servicios_en_camino: document.getElementById('metric-servicios-en-camino'),
+                servicios_en_progreso: document.getElementById('metric-servicios-en-progreso'),
+                servicios_completados: document.getElementById('metric-servicios-completados'),
+                servicios_cancelados: document.getElementById('metric-servicios-cancelados'),
+                tasa_finalizacion: document.getElementById('metric-tasa-finalizacion'),
+                peticiones_activas: document.getElementById('metric-peticiones-activas'),
+                peticiones_asignadas: document.getElementById('metric-peticiones-asignadas'),
+                peticiones_completadas: document.getElementById('metric-peticiones-completadas'),
+                peticiones_canceladas: document.getElementById('metric-peticiones-canceladas'),
+                total_postulaciones: document.getElementById('metric-total-postulaciones'),
+                postulaciones_pendientes: document.getElementById('metric-postulaciones-pendientes'),
+                postulaciones_aceptadas: document.getElementById('metric-postulaciones-aceptadas'),
+                tasa_aceptacion_postulaciones: document.getElementById('metric-tasa-aceptacion'),
+                promedio_calificacion: document.getElementById('metric-promedio-calificacion'),
+                total_calificaciones: document.getElementById('metric-total-calificaciones'),
+            };
+            const periodLabels = Array.from(document.querySelectorAll('[data-period-label]'));
+            const adminBellDot = document.getElementById('admin-bell-dot');
+            let isMetricsSyncing = false;
+            let adminMetricsRevision = null;
+            let adminMetricsWaitController = null;
+
+            function setUserPanelOpen(id, open) {
+                const panel = document.querySelector(`[data-user-panel="${id}"]`);
+                const icon = document.querySelector(`[data-user-accordion-icon="${id}"]`);
+                if (!panel) return;
+                if (open) {
+                    panel.classList.remove('hidden');
+                    panel.classList.add('block');
+                    if (icon) icon.classList.add('rotate-180');
+                    return;
+                }
+                panel.classList.add('hidden');
+                panel.classList.remove('block');
+                if (icon) icon.classList.remove('rotate-180');
+            }
+
+            function applyMetrics(payload) {
+                if (!payload || payload.status !== 'success') return;
+                const mapping = {
+                    total_usuarios: payload.total_usuarios,
+                    pendientes_verificar: payload.pendientes_verificar,
+                    usuarios_aprobados: payload.usuarios_aprobados,
+                    usuarios_rechazados: payload.usuarios_rechazados,
+                    enfermeros_verificados: payload.enfermeros_verificados,
+                    enfermeros_ocupados: payload.enfermeros_ocupados,
+                    ocupacion_enfermeros: payload.ocupacion_enfermeros,
+                    servicios_total: payload.servicios_total,
+                    servicios_activos: payload.servicios_activos,
+                    servicios_en_camino: payload.servicios_en_camino,
+                    servicios_en_progreso: payload.servicios_en_progreso,
+                    servicios_completados: payload.servicios_completados,
+                    servicios_cancelados: payload.servicios_cancelados,
+                    tasa_finalizacion: payload.tasa_finalizacion,
+                    peticiones_activas: payload.peticiones_activas,
+                    peticiones_asignadas: payload.peticiones_asignadas,
+                    peticiones_completadas: payload.peticiones_completadas,
+                    peticiones_canceladas: payload.peticiones_canceladas,
+                    total_postulaciones: payload.total_postulaciones,
+                    postulaciones_pendientes: payload.postulaciones_pendientes,
+                    postulaciones_aceptadas: payload.postulaciones_aceptadas,
+                    tasa_aceptacion_postulaciones: payload.tasa_aceptacion_postulaciones,
+                    promedio_calificacion: payload.promedio_calificacion,
+                    total_calificaciones: payload.total_calificaciones,
+                };
+                Object.keys(mapping).forEach((k) => {
+                    const el = metricsEls[k];
+                    if (!el) return;
+                    const v = mapping[k];
+                    if (v === null || typeof v === 'undefined') return;
+                    el.textContent = String(v);
+                });
+                if (periodLabels.length && payload.metricas_periodo_label) {
+                    periodLabels.forEach((el) => {
+                        el.textContent = payload.metricas_periodo_label;
+                    });
+                }
+                if (adminBellDot) {
+                    if ((payload.peticiones_activas || 0) > 0) adminBellDot.classList.remove('hidden');
+                    else adminBellDot.classList.add('hidden');
+                }
+            }
+
+            async function syncAdminMetrics() {
+                if (isMetricsSyncing) return;
+                isMetricsSyncing = true;
+                try {
+                    const url = new URL('{% url "api_admin_metrics" %}', window.location.origin);
+                    const params = new URLSearchParams(window.location.search);
+                    ['dias', 'search', 'estado'].forEach((k) => {
+                        const v = params.get(k);
+                        if (v) url.searchParams.set(k, v);
+                    });
+                    const res = await fetch(url.toString(), {
+                        method: 'GET',
+                        credentials: 'same-origin',
+                        headers: { 'Accept': 'application/json' },
+                    });
+                    const payload = await res.json().catch(() => ({}));
+                    applyMetrics(payload);
+                } catch (_) {
+                } finally {
+                    isMetricsSyncing = false;
+                }
+            }
+
+            const hasAnyMetrics = Object.values(metricsEls).some(Boolean);
+            if (hasAnyMetrics) {
+                syncAdminMetrics();
+
+                async function syncAdminMetricsRevision() {
+                    try {
+                        const res = await fetch('{% url "api_admin_metrics_revision" %}', {
+                            method: 'GET',
+                            credentials: 'same-origin',
+                            headers: { 'Accept': 'application/json' },
+                        });
+                        const payload = await res.json().catch(() => ({}));
+                        if (payload && payload.status === 'success') {
+                            adminMetricsRevision = Number(payload.revision || 0);
+                        }
+                    } catch (_) {
+                    }
+                }
+
+                function stopAdminMetricsRealtime() {
+                    if (adminMetricsWaitController) {
+                        adminMetricsWaitController.abort();
+                        adminMetricsWaitController = null;
+                    }
+                }
+
+                async function waitAdminMetricsRevision() {
+                    if (document.hidden) return;
+                    stopAdminMetricsRealtime();
+
+                    const controller = new AbortController();
+                    adminMetricsWaitController = controller;
+
+                    try {
+                        const url = new URL('{% url "api_admin_metrics_wait" %}', window.location.origin);
+                        url.searchParams.set('since', String(adminMetricsRevision || 0));
+                        url.searchParams.set('timeout', '25');
+
+                        const res = await fetch(url.toString(), {
+                            method: 'GET',
+                            credentials: 'same-origin',
+                            headers: { 'Accept': 'application/json' },
+                            signal: controller.signal,
+                        });
+                        const payload = await res.json().catch(() => ({}));
+                        if (payload && payload.status === 'success') {
+                            const nextRevision = Number(payload.revision || 0);
+                            const changed = Boolean(payload.changed);
+                            adminMetricsRevision = nextRevision;
+                            if (changed) await syncAdminMetrics();
+                        }
+                        waitAdminMetricsRevision();
+                    } catch (err) {
+                        if (err && err.name === 'AbortError') return;
+                        setTimeout(() => {
+                            waitAdminMetricsRevision();
+                        }, 1500);
+                    }
+                }
+
+                syncAdminMetricsRevision().finally(() => {
+                    waitAdminMetricsRevision();
+                });
+
+                document.addEventListener('visibilitychange', () => {
+                    if (document.hidden) {
+                        stopAdminMetricsRealtime();
+                        return;
+                    }
+                    syncAdminMetrics();
+                    waitAdminMetricsRevision();
+                });
+            }
+
+            if (userAccordionButtons.length) {
+                userAccordionButtons.forEach((btn) => {
+                    btn.addEventListener('click', () => {
+                        const id = btn.getAttribute('data-user-accordion');
+                        if (!id) return;
+                        const panel = document.querySelector(`[data-user-panel="${id}"]`);
+                        const isOpen = panel && !panel.classList.contains('hidden');
+                        userAccordionButtons.forEach((b) => {
+                            const otherId = b.getAttribute('data-user-accordion');
+                            if (otherId) setUserPanelOpen(otherId, false);
+                        });
+                        setUserPanelOpen(id, !isOpen);
+                    });
+                });
+            }
+
+            const serviceAccordionButtons = Array.from(document.querySelectorAll('[data-service-accordion]'));
+
+            function setServicePanelOpen(id, open) {
+                const panel = document.querySelector(`[data-service-panel="${id}"]`);
+                const icon = document.querySelector(`[data-service-icon="${id}"]`);
+                if (!panel) return;
+                if (open) {
+                    panel.classList.remove('hidden');
+                    panel.classList.add('block');
+                    if (icon) icon.classList.add('rotate-180');
+                    return;
+                }
+                panel.classList.add('hidden');
+                panel.classList.remove('block');
+                if (icon) icon.classList.remove('rotate-180');
+            }
+
+            if (serviceAccordionButtons.length) {
+                serviceAccordionButtons.forEach((btn) => {
+                    btn.addEventListener('click', () => {
+                        const id = btn.getAttribute('data-service-accordion');
+                        if (!id) return;
+                        const panel = document.querySelector(`[data-service-panel="${id}"]`);
+                        const isOpen = panel && !panel.classList.contains('hidden');
+                        serviceAccordionButtons.forEach((b) => {
+                            const otherId = b.getAttribute('data-service-accordion');
+                            if (otherId) setServicePanelOpen(otherId, false);
+                        });
+                        setServicePanelOpen(id, !isOpen);
+                    });
+                });
+            }
+
+            function setActivePanel(key, opts) {
+                const options = opts || {};
+                Object.entries(panels).forEach(([k, el]) => {
+                    if (!el) return;
+                    el.classList.toggle('hidden', k !== key);
+                });
+
+                navLinks.forEach((a) => {
+                    const isActive = a.getAttribute('data-ax-nav') === key;
+                    const isPill = a.classList.contains('rounded-full');
+                    if (isPill) {
+                        a.classList.toggle('bg-emerald-50', isActive);
+                        a.classList.toggle('border-emerald-200', isActive);
+                        a.classList.toggle('text-emerald-900', isActive);
+                        a.classList.toggle('font-semibold', isActive);
+                        a.classList.toggle('bg-white', !isActive);
+                        a.classList.toggle('border-slate-200', !isActive);
+                        a.classList.toggle('text-slate-600', !isActive);
+                        a.classList.remove('ring-1', 'ring-emerald-200', 'bg-white/80', 'text-[#0b2f24]');
+                        return;
+                    }
+
+                    a.classList.toggle('bg-white/80', isActive);
+                    a.classList.toggle('text-[#0b2f24]', isActive);
+                    a.classList.toggle('font-semibold', isActive);
+                    a.classList.toggle('ring-1', isActive);
+                    a.classList.toggle('ring-emerald-200', isActive);
+                });
+
+                if (options.updateHash !== false) {
+                    const next = `#${key === 'overview' ? 'overview' : key === 'notifications' ? 'notifications' : key === 'users' ? 'users' : key === 'services' ? 'services' : key === 'reportes' ? 'reportes' : key === 'alertas' ? 'alertas' : key === 'eliminacion' ? 'eliminacion' : key === 'soporte' ? 'soporte' : 'settings'}`;
+                    if (window.location.hash !== next) window.history.replaceState(null, '', next);
+                }
+                toggleExportMenu(false);
+            }
+
+            function setBuscadorDropdownVisible(visible) {
+                if (!buscadorDropdown) return;
+                buscadorDropdown.classList.toggle('hidden', !visible);
+            }
+
+            function renderBuscadorMatches(query) {
+                if (!buscadorDropdown) return;
+                const term = (query || '').trim().toLowerCase();
+                if (!term) {
+                    buscadorDropdown.innerHTML = '';
+                    setBuscadorDropdownVisible(false);
+                    return;
+                }
+
+                const matches = rutasDisponibles.filter((r) => (r.nombre || '').toLowerCase().includes(term));
+                buscadorDropdown.innerHTML = '';
+                if (!matches.length) {
+                    setBuscadorDropdownVisible(false);
+                    return;
+                }
+
+                matches.forEach((route) => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors';
+                    btn.textContent = route.nombre;
+                    btn.addEventListener('click', () => {
+                        setActivePanel(route.key);
+                        if (buscadorInput) buscadorInput.value = '';
+                        setBuscadorDropdownVisible(false);
+                    });
+                    buscadorDropdown.appendChild(btn);
+                });
+                setBuscadorDropdownVisible(true);
+            }
+
+            function setActiveNavFromHash() {
+                const hash = (window.location.hash || '#overview').replace('#', '');
+                const key = hash === 'notifications' ? 'notifications' : hash === 'users' ? 'users' : hash === 'services' ? 'services' : hash === 'reportes' ? 'reportes' : hash === 'alertas' ? 'alertas' : hash === 'eliminacion' ? 'eliminacion' : hash === 'soporte' ? 'soporte' : hash === 'settings' ? 'settings' : 'overview';
+                setActivePanel(key, { updateHash: false });
+            }
+
+            function toggleExportMenu(force) {
+                if (!exportMenu) return;
+                toggleDropdown(exportMenu, force);
+            }
+
+            function clearDropdownTimer(dropdown) {
+                const timer = dropdownHideTimers.get(dropdown);
+                if (timer) {
+                    window.clearTimeout(timer);
+                    dropdownHideTimers.delete(dropdown);
+                }
+            }
+
+            function showDropdown(dropdown) {
+                if (!dropdown) return;
+                clearDropdownTimer(dropdown);
+                dropdown.classList.remove('hidden', 'ax-ui-dropdown-closing');
+                requestAnimationFrame(() => {
+                    dropdown.classList.add('ax-ui-dropdown-visible');
+                });
+            }
+
+            function hideDropdown(dropdown) {
+                if (!dropdown) return;
+                clearDropdownTimer(dropdown);
+                dropdown.classList.remove('ax-ui-dropdown-visible');
+                dropdown.classList.add('ax-ui-dropdown-closing');
+                const timer = window.setTimeout(() => {
+                    dropdown.classList.add('hidden');
+                    dropdown.classList.remove('ax-ui-dropdown-closing');
+                    dropdownHideTimers.delete(dropdown);
+                }, 210);
+                dropdownHideTimers.set(dropdown, timer);
+            }
+
+            function toggleDropdown(dropdown, force) {
+                if (!dropdown) return;
+                if (typeof force === 'boolean') {
+                    if (force) {
+                        showDropdown(dropdown);
+                    } else {
+                        hideDropdown(dropdown);
+                    }
+                    return;
+                }
+                const isOpen = !dropdown.classList.contains('hidden') && dropdown.classList.contains('ax-ui-dropdown-visible');
+                if (isOpen) {
+                    hideDropdown(dropdown);
+                    return;
+                }
+                showDropdown(dropdown);
+            }
+
+            function toggleNotificationDropdown(force) {
+                toggleDropdown(notificationDropdown, force);
+                if (typeof force === 'boolean' && force === false) toggleDropdown(notificationDropdownMobile, false);
+            }
+
+            function toggleNotificationDropdownMobile(force) {
+                toggleDropdown(notificationDropdownMobile, force);
+                if (typeof force === 'boolean' && force === false) toggleDropdown(notificationDropdown, false);
+            }
+
+            function toggleDaysDropdown(force) {
+                if (!daysDropdown) return;
+                if (typeof force === 'boolean') {
+                    daysDropdown.classList.toggle('hidden', !force);
+                    return;
+                }
+                daysDropdown.classList.toggle('hidden');
+            }
+
+            if (cardUsuariosTotales) {
+                cardUsuariosTotales.addEventListener('click', () => setActivePanel('users'));
+            }
+
+            if (cardCuidadoresActivos) {
+                cardCuidadoresActivos.addEventListener('click', () => setActivePanel('users'));
+            }
+
+            if (cardSolicitudesPendientes) {
+                cardSolicitudesPendientes.addEventListener('click', () => setActivePanel('users'));
+            }
+
+            if (cardServiciosHoy) {
+                cardServiciosHoy.addEventListener('click', () => setActivePanel('services'));
+            }
+
+            if (notificationBtn) {
+                notificationBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const isHidden = notificationDropdown.classList.contains('hidden');
+                    toggleNotificationDropdown();
+                    if (isHidden) toggleDaysDropdown(false);
+                });
+            }
+
+            if (notificationBell && notificationDropdownMobile) {
+                notificationBell.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const isHidden = notificationDropdownMobile.classList.contains('hidden');
+                    toggleNotificationDropdownMobile();
+                    if (isHidden) toggleDaysDropdown(false);
+                });
+            }
+
+            if (viewAllNotificationsBtn) {
+                viewAllNotificationsBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    toggleNotificationDropdown(false);
+                    setActivePanel('alertas');
+                });
+            }
+
+            if (viewAllNotificationsBtnMobile) {
+                viewAllNotificationsBtnMobile.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    toggleNotificationDropdownMobile(false);
+                    setActivePanel('alertas');
+                });
+            }
+
+            if (daysFilterBtn) {
+                daysFilterBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const isHidden = daysDropdown.classList.contains('hidden');
+                    toggleDaysDropdown();
+                    if (isHidden) toggleNotificationDropdown(false);
+                });
+            }
+
+            if (exportBtn) {
+                exportBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    toggleExportMenu();
+                });
+            }
+
+            if (buscadorInput) {
+                buscadorInput.addEventListener('input', () => {
+                    renderBuscadorMatches(buscadorInput.value);
+                });
+                buscadorInput.addEventListener('focus', () => {
+                    renderBuscadorMatches(buscadorInput.value);
+                });
+            }
+
+            if (newReportBtn) {
+                newReportBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    setActivePanel('overview');
+                    toggleExportMenu(true);
+                    exportMenu.scrollIntoView({ block: 'nearest' });
+                });
+            }
+
+            navLinks.forEach((a) => {
+                a.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const key = a.getAttribute('data-ax-nav') || 'overview';
+                    setActivePanel(key);
+                });
+            });
+
+            quickOpen.forEach((btn) => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const key = btn.getAttribute('data-ax-open') || 'overview';
+                    setActivePanel(key);
+                });
+            });
+
+            if (btnContactarSoporteUrgente) {
+                btnContactarSoporteUrgente.addEventListener('click', async () => {
+                    const confirmResult = await Swal.fire({
+                        icon: 'warning',
+                        title: 'Contactar soporte urgente',
+                        text: 'Se enviará una alerta prioritaria al correo institucional de soporte de Assist Care.',
+                        showCancelButton: true,
+                        confirmButtonText: 'Enviar alerta',
+                        cancelButtonText: 'Cancelar',
+                        buttonsStyling: false,
+                        backdrop: 'bg-slate-900/40 backdrop-blur-sm',
+                        customClass: {
+                            popup: 'bg-white rounded-2xl shadow-xl border border-gray-100 max-w-md w-full p-6',
+                            title: 'text-slate-900 text-xl font-bold',
+                            htmlContainer: 'text-slate-600 text-sm',
+                            confirmButton: 'bg-[#0b2f24] hover:bg-[#123d30] text-white font-semibold py-3 px-5 rounded-xl transition-colors',
+                            cancelButton: 'ml-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold py-3 px-5 rounded-xl transition-colors',
+                            actions: 'mt-5',
+                        },
+                    });
+                    if (!confirmResult.isConfirmed) return;
+
+                    btnContactarSoporteUrgente.disabled = true;
+                    try {
+                        const csrfToken = adminEmergencyCsrfToken ? adminEmergencyCsrfToken.value : '';
+                        const res = await fetch('{% url "trigger_emergency_support" %}', {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json',
+                                'X-CSRFToken': csrfToken,
+                            },
+                        });
+                        const payload = await res.json().catch(() => ({}));
+                        await Swal.fire({
+                            icon: payload.delivery === 'failed' ? 'warning' : 'success',
+                            title: payload.delivery === 'failed' ? 'Alerta registrada' : 'Correo enviado',
+                            text: payload.message || 'La solicitud de soporte fue procesada.',
+                            buttonsStyling: false,
+                            confirmButtonText: 'Entendido',
+                            customClass: {
+                                popup: 'bg-white rounded-2xl shadow-xl border border-emerald-100 max-w-md w-full p-6',
+                                title: 'text-slate-900 text-xl font-bold',
+                                htmlContainer: 'text-slate-600 text-sm',
+                                confirmButton: 'bg-[#0b2f24] hover:bg-[#123d30] text-white font-semibold py-3 px-5 rounded-xl transition-colors',
+                            },
+                        });
+                    } catch (_) {
+                        await Swal.fire({
+                            icon: 'error',
+                            title: 'No se pudo contactar soporte',
+                            text: 'Intenta nuevamente en unos segundos.',
+                            buttonsStyling: false,
+                            confirmButtonText: 'Cerrar',
+                            customClass: {
+                                popup: 'bg-white rounded-2xl shadow-xl border border-red-100 max-w-md w-full p-6',
+                                title: 'text-slate-900 text-xl font-bold',
+                                htmlContainer: 'text-slate-600 text-sm',
+                                confirmButton: 'bg-[#0b2f24] hover:bg-[#123d30] text-white font-semibold py-3 px-5 rounded-xl transition-colors',
+                            },
+                        });
+                    } finally {
+                        btnContactarSoporteUrgente.disabled = false;
+                    }
+                });
+            }
+
+            document.addEventListener('click', (e) => {
+                toggleExportMenu(false);
+                toggleNotificationDropdown(false);
+                toggleDaysDropdown(false);
+                if (buscadorWrapper && !buscadorWrapper.contains(e.target)) {
+                    setBuscadorDropdownVisible(false);
+                }
+            });
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') { toggleExportMenu(false); toggleNotificationDropdown(false); toggleDaysDropdown(false); setBuscadorDropdownVisible(false); }
+            });
+
+            window.addEventListener('hashchange', setActiveNavFromHash);
+            setActiveNavFromHash();
+        })();
+
+        // Modal de Nuevo Reporte
+        const btnNuevoReporte = document.getElementById('btn-nuevo-reporte');
+        const modalReporte = document.getElementById('modal-reporte');
+        const btnCancelarReporte = document.getElementById('btn-cancelar-reporte');
+        const btnCerrarReporte = document.getElementById('btn-cerrar-reporte');
+
+        if (btnNuevoReporte) {
+            btnNuevoReporte.addEventListener('click', () => {
+                modalReporte.classList.remove('hidden');
+            });
+        }
+
+        if (btnCancelarReporte) {
+            btnCancelarReporte.addEventListener('click', () => {
+                modalReporte.classList.add('hidden');
+            });
+        }
+
+        if (btnCerrarReporte) {
+            btnCerrarReporte.addEventListener('click', () => {
+                modalReporte.classList.add('hidden');
+            });
+        }
+
+        if (modalReporte) {
+            modalReporte.addEventListener('click', (e) => {
+                if (e.target === modalReporte) {
+                    modalReporte.classList.add('hidden');
+                }
+            });
+        }
+ 
+ document.addEventListener('DOMContentLoaded', function() { 
+     const btnDisparar = document.getElementById('btn-disparar-limpieza'); 
+     const modal = document.getElementById('modal-confirmar-limpieza'); 
+     const btnCancelar = document.getElementById('btn-cancelar-modal'); 
+ 
+     if (btnDisparar && modal) { 
+         // Al dar clic al botón principal, removemos 'hidden' para mostrar el modal 
+         btnDisparar.addEventListener('click', function(e) { 
+             e.preventDefault(); 
+             modal.classList.remove('hidden'); 
+         }); 
+     } 
+ 
+     if (btnCancelar && modal) { 
+         // Al dar clic en cancelar, volvemos a ocultar el modal 
+         btnCancelar.addEventListener('click', function() { 
+             modal.classList.add('hidden'); 
+         }); 
+     } 
+ 
+     // LÓGICA DE REDIRECCIÓN AUTOMÁTICA POST-ELIMINACIÓN 
+     // Si venimos de ejecutar la limpieza, forzamos la SPA a mostrar el historial 
+     const urlParams = new URLSearchParams(window.location.search); 
+     if (urlParams.get('action') === 'clear_old_alerts') { 
+         // Ejecuta la simulación de clic en el menú lateral de 'Historial de Eliminación' 
+         // Busca el enlace o botón de tu sidebar para cambiar el hash a '#eliminacion' o disparar tu función SPA 
+         const sidebarEliminacion = document.querySelector('[href="#eliminacion"]') || document.getElementById('sidebar-eliminacion'); 
+         if (sidebarEliminacion) { 
+             sidebarEliminacion.click(); 
+         } else { 
+             // Alternativa directa si manejas los paneles ocultando clases de manera manual: 
+             const panelAjustes = document.getElementById('panel-ajustes') || document.querySelector('.settings-section'); 
+             const panelHistorial = document.getElementById('panel-historial-eliminacion') || document.getElementById('panel-eliminacion'); 
+             if(panelAjustes) panelAjustes.classList.add('hidden'); 
+             if(panelHistorial) panelHistorial.classList.remove('hidden'); 
+         } 
+     } 
+
+    const docModal = document.getElementById('modal-documento');
+    const docImg = document.getElementById('modal-documento-img');
+    const docTitle = document.getElementById('modal-documento-title');
+    const docClose = document.getElementById('btn-cerrar-documento');
+    const docLink = document.getElementById('modal-documento-link');
+    const docLinks = document.querySelectorAll('.ax-doc-link');
+
+    const closeDocModal = () => {
+        if (docModal) docModal.classList.add('hidden');
+        if (docImg) docImg.removeAttribute('src');
+        if (docTitle) docTitle.textContent = '';
+        if (docLink) docLink.removeAttribute('href');
+    };
+
+    const openDocModal = (url, title) => {
+        if (!docModal) return;
+        if (docTitle) docTitle.textContent = title || 'Documento';
+        if (docImg) docImg.setAttribute('src', url);
+        if (docLink) docLink.setAttribute('href', url);
+        docModal.classList.remove('hidden');
+    };
+
+    docLinks.forEach((a) => {
+        a.addEventListener('click', (e) => {
+            e.preventDefault();
+            const url = a.getAttribute('href');
+            if (!url) return;
+            openDocModal(url, a.getAttribute('data-doc-title') || a.textContent || 'Documento');
+        });
+    });
+
+    if (docClose) {
+        docClose.addEventListener('click', closeDocModal);
+    }
+
+    if (docModal) {
+        docModal.addEventListener('click', (e) => {
+            if (e.target === docModal) closeDocModal();
+        });
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeDocModal();
+    });
+ });
+    </script>
+
+    <div id="modal-reporte" class="fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center hidden z-[100] backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-xl w-11/12 sm:w-3/4 md:w-2/3 lg:w-1/2 max-w-2xl mx-auto overflow-hidden max-h-[90vh] flex flex-col">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                <h3 class="text-lg font-bold text-gray-900">Crear Nuevo Reporte</h3>
+                <button type="button" id="btn-cerrar-reporte" onclick="document.getElementById('modal-reporte').classList.add('hidden');" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <form method="POST" action="" class="flex flex-col flex-1">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="nuevo_reporte">
+                <div class="px-6 py-5 space-y-4 flex-1 overflow-y-auto ax-scrollbar">
+                    <div>
+                        <label for="reporte-titulo" class="block text-sm font-semibold text-gray-700 mb-1.5">Título del Reporte</label>
+                        <input type="text" id="reporte-titulo" name="titulo" required placeholder="Ej: Incidencia en servicio #123" class="w-full bg-[#f2faf7] border-0 rounded-xl px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#006B3F]">
+                    </div>
+                    <div>
+                        <label for="reporte-tipo" class="block text-sm font-semibold text-gray-700 mb-1.5">Tipo de Reporte</label>
+                        <select id="reporte-tipo" name="tipo" required class="w-full bg-[#f2faf7] border-0 rounded-xl px-4 py-3 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#006B3F]">
+                            <option value="">Seleccionar tipo...</option>
+                            <option value="incidencia">Incidencia de Servicio</option>
+                            <option value="auditoria">Auditoría General</option>
+                            <option value="rendimiento">Rendimiento</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="reporte-descripcion" class="block text-sm font-semibold text-gray-700 mb-1.5">Descripción Detallada</label>
+                        <textarea id="reporte-descripcion" name="descripcion" required rows="4" placeholder="Describe los detalles del reporte..." class="w-full bg-[#f2faf7] border-0 rounded-xl px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#006B3F] resize-none"></textarea>
+                    </div>
+                </div>
+                <div class="flex items-center justify-end gap-3 px-6 py-4 bg-gray-50 border-t border-gray-100">
+                    <button type="button" id="btn-cancelar-reporte" onclick="document.getElementById('modal-reporte').classList.add('hidden');" class="px-5 py-2.5 text-sm font-semibold text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-xl transition-colors">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="px-5 py-2.5 text-sm font-semibold text-white bg-[#006B3F] hover:bg-[#005230] rounded-xl transition-colors">
+                        Guardar Reporte
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modal-confirmar-limpieza" class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-50 animate-fade-in px-4">
+        <div class="bg-white rounded-xl p-6 w-11/12 sm:w-3/4 md:w-2/3 lg:w-1/2 max-w-md mx-auto shadow-2xl border border-gray-100 text-center transform transition-all scale-95 duration-200 max-h-[90vh] overflow-y-auto ax-scrollbar">
+            <div class="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4 text-red-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+            </div>
+            <h3 class="text-lg font-bold text-gray-900 mb-2">¿Confirmar archivo de historial?</h3>
+            <p class="text-sm text-gray-500 mb-6">Las alertas automáticas del sistema se removerán de la campanita de notificaciones y se enviarán al panel histórico de auditoría.</p>
+            <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                <button id="btn-cancelar-modal" type="button" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium transition-colors text-sm w-full sm:w-auto">Cancelar</button>
+                <a id="btn-ejecutar-limpieza" href="?action=clear_old_alerts" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors text-sm w-full sm:w-auto text-center">Sí, archivar alertas</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-documento" class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center z-[110] px-4 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl border border-gray-100 w-full max-w-3xl overflow-hidden">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                <div class="text-base font-bold text-gray-900" id="modal-documento-title"></div>
+                <button type="button" id="btn-cerrar-documento" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="bg-gray-50 px-6 py-5">
+                <div class="bg-white border border-gray-100 rounded-2xl p-4">
+                    <img id="modal-documento-img" alt="Documento" class="w-full max-h-[70vh] object-contain rounded-xl" />
+                </div>
+                <div class="mt-4 flex justify-end">
+                    <a id="modal-documento-link" href="#" target="_blank" rel="noopener" class="text-sm font-semibold text-emerald-700 hover:text-emerald-800">Abrir en nueva pestaña</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,57 @@
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: assistcare
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d assistcare"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  migrate:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/assistcare
+      ALLOWED_HOSTS: 127.0.0.1,localhost
+      PYTHONUNBUFFERED: "1"
+    working_dir: /app/backend
+    command: python manage.py migrate
+    restart: "no"
+
+  web:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/assistcare
+      ALLOWED_HOSTS: 127.0.0.1,localhost
+      PYTHONUNBUFFERED: "1"
+    ports:
+      - "8000:8000"
+    working_dir: /app/backend
+    command: >
+      sh -c "python manage.py collectstatic --noinput &&
+             gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 2 --timeout 120"
+    init: true
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

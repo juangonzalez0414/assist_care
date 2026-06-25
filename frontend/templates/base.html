@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:,">
+    <title>{% block title %}Acompañamiento Seguro{% endblock %}</title>
+    {% load static %}
+    <!-- Google Fonts for better readability -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    {% include 'includes/global_ui_assets.html' %}
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body {% if user.is_authenticated %}data-authenticated="true"{% else %}data-authenticated="false"{% endif %}>
+    <header class="main-header">
+        <nav class="container flex items-center justify-between gap-4">
+            <div class="logo">
+                <a href="{% url 'dashboard' %}">Acompañamiento <span>Seguro</span></a>
+            </div>
+
+            <button type="button" id="btn-open-nav" class="md:hidden inline-flex items-center justify-center w-11 h-11 rounded-xl bg-white/80 border border-gray-200 text-gray-700">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <path d="M4 6h16"/>
+                    <path d="M4 12h16"/>
+                    <path d="M4 18h16"/>
+                </svg>
+            </button>
+
+            <ul class="nav-links hidden md:flex md:items-center md:gap-4">
+                {% if user.is_authenticated %}
+                    <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                    <li><a href="{% url 'logout' %}" class="btn-logout">Cerrar Sesión</a></li>
+                {% else %}
+                    <li><a href="{% url 'login' %}">Iniciar Sesión</a></li>
+                    <li><a href="{% url 'registro' %}" class="btn-register">Registrarse</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </header>
+
+    <div id="nav-overlay" class="hidden md:hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40"></div>
+    <div id="nav-drawer" class="hidden md:hidden fixed top-0 left-0 bottom-0 w-[85%] max-w-sm bg-white z-50 shadow-2xl border-r border-gray-100">
+        <div class="p-5 flex items-center justify-between border-b border-gray-100">
+            <div class="font-semibold text-gray-900">Navegación</div>
+            <button type="button" id="btn-close-nav" class="w-11 h-11 rounded-xl bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-700">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+                    <path d="M18 6 6 18M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <div class="p-5">
+            <div class="space-y-2">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'dashboard' %}" class="block px-4 py-3 rounded-xl bg-gray-50 border border-gray-100 text-sm font-semibold text-gray-800">Dashboard</a>
+                    <a href="{% url 'logout' %}" class="block px-4 py-3 rounded-xl bg-white border border-gray-200 text-sm font-semibold text-gray-800">Cerrar Sesión</a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="block px-4 py-3 rounded-xl bg-gray-50 border border-gray-100 text-sm font-semibold text-gray-800">Iniciar Sesión</a>
+                    <a href="{% url 'registro' %}" class="block px-4 py-3 rounded-xl bg-white border border-gray-200 text-sm font-semibold text-gray-800">Registrarse</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <main class="container">
+        {% if messages %}
+            <script>
+                document.addEventListener("DOMContentLoaded", function() {
+                    const toast = Swal.mixin({
+                        toast: true,
+                        position: 'top-end',
+                        showConfirmButton: false,
+                        timer: 4000,
+                        timerProgressBar: true,
+                        background: '#1f2937',
+                        color: '#ffffff',
+                        iconColor: '#ffffff',
+                    });
+                    {% for message in messages %}
+                        setTimeout(function () {
+                            toast.fire({
+                                icon: '{% if "error" in message.tags %}error{% elif "success" in message.tags %}success{% elif "warning" in message.tags %}warning{% else %}info{% endif %}',
+                                title: '{% if "error" in message.tags %}¡Atención!{% elif "success" in message.tags %}¡Éxito!{% else %}Aviso{% endif %}',
+                                text: '{{ message|escapejs }}',
+                            });
+                        }, {{ forloop.counter0 }} * 450);
+                    {% endfor %}
+                });
+            </script>
+        {% endif %}
+
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <p>&copy; 2026 Acompañamiento Seguro. Compromiso con la Seguridad y Confianza.</p>
+        </div>
+    </footer>
+
+    <script src="{% static 'js/validaciones.js' %}"></script>
+    <script>
+        (function () {
+            const overlay = document.getElementById('nav-overlay');
+            const drawer = document.getElementById('nav-drawer');
+            const openBtn = document.getElementById('btn-open-nav');
+            const closeBtn = document.getElementById('btn-close-nav');
+
+            if (!overlay || !drawer || !openBtn || !closeBtn) return;
+
+            function openNav() {
+                overlay.classList.remove('hidden');
+                drawer.classList.remove('hidden');
+                document.body.classList.add('overflow-hidden');
+            }
+
+            function closeNav() {
+                overlay.classList.add('hidden');
+                drawer.classList.add('hidden');
+                document.body.classList.remove('overflow-hidden');
+            }
+
+            openBtn.addEventListener('click', openNav);
+            closeBtn.addEventListener('click', closeNav);
+            overlay.addEventListener('click', closeNav);
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') closeNav();
+            });
+        })();
+    </script>
+
+    <!-- ── Sesión: Timeout por inactividad ──────────────────────────────────── -->
+    <script>
+    (function () {
+        var TIMEOUT_MS = 60 * 1000;
+        var WARNING_BEFORE_MS = 10 * 1000;
+        var LOGOUT_URL = "{% url 'logout' %}";
+        var KEEPALIVE_URL = "{% url 'dashboard' %}";
+
+        var idleTimer = null;
+        var warningTimer = null;
+        var isDirty = false;
+        var hasShownWarning = false;
+
+        function initFormDirtyDetection() {
+            document.querySelectorAll('input:not([type="hidden"]):not(:disabled), textarea:not(:disabled), select:not(:disabled)').forEach(function (el) {
+                el.addEventListener('input', function () { isDirty = true; });
+            });
+        }
+
+        function pauseTimer() {
+            clearTimeout(idleTimer);
+            clearTimeout(warningTimer);
+        }
+
+        function resumeTimer() {
+            clearTimeout(idleTimer);
+            clearTimeout(warningTimer);
+            idleTimer = setTimeout(showWarning, TIMEOUT_MS - WARNING_BEFORE_MS);
+        }
+
+        function startTimer() {
+            clearTimeout(idleTimer);
+            clearTimeout(warningTimer);
+            hasShownWarning = false;
+            idleTimer = setTimeout(showWarning, TIMEOUT_MS - WARNING_BEFORE_MS);
+        }
+
+        function showWarning() {
+            if (hasShownWarning) return;
+            hasShownWarning = true;
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Sesión por expirar',
+                    text: 'Tu sesión expirará en 10 segundos. ¿Deseas mantener la sesión activa?',
+                    showCancelButton: true,
+                    confirmButtonText: 'Mantener sesión',
+                    cancelButtonText: 'Cerrar ahora',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    reverseButtons: true,
+                    customClass: {
+                        popup: 'rounded-3xl border border-amber-200 bg-white shadow-[0_18px_45px_rgba(245,158,11,0.2)]',
+                        title: 'text-slate-900 text-base font-bold',
+                        htmlContainer: 'text-slate-600 text-sm',
+                        confirmButton: 'bg-[#006B3F] hover:bg-[#005230] text-white font-medium py-2 px-4 rounded-xl',
+                        cancelButton: 'bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-xl',
+                    },
+                }).then(function (result) {
+                    if (result.isConfirmed) {
+                        keepSessionAlive();
+                    } else {
+                        window.location.href = LOGOUT_URL;
+                    }
+                });
+            } else {
+                var el = document.getElementById('session-timeout-warning');
+                if (el) el.classList.remove('hidden');
+                var btn = document.getElementById('keep-session-btn');
+                if (btn) btn.onclick = function () {
+                    keepSessionAlive();
+                    if (el) el.classList.add('hidden');
+                };
+            }
+
+            idleTimer = setTimeout(function () {
+                var el = document.getElementById('session-timeout-warning');
+                if (el) el.classList.add('hidden');
+                window.location.href = LOGOUT_URL;
+            }, WARNING_BEFORE_MS);
+        }
+
+        function keepSessionAlive() {
+            fetch(KEEPALIVE_URL, {
+                method: 'GET',
+                headers: { 
+                    'X-Requested-With': 'XMLHttpRequest', 
+                    'Accept': 'application/json',
+                    'X-Renew-Session': 'true'  // <-- FORZAR RENOVACIÓN REAL
+                },
+                credentials: 'same-origin',
+            }).then(function () {
+                isDirty = false;
+                hasShownWarning = false;
+                startTimer();
+            }).catch(function () {});
+        }
+
+        ['mousemove', 'keydown', 'scroll', 'touchstart', 'click'].forEach(function (evt) {
+            document.addEventListener(evt, function () {
+                // Si la advertencia está visible, no reiniciar el timer
+                var inSwal = document.querySelector('.swal2-container');
+                if (inSwal && inSwal.style.display !== 'none') return;
+                
+                // throttle mousemove para evitar reinicios por vibraciones
+                if (evt === 'mousemove') {
+                    if (window._mouseMoveThrottle) return;
+                    window._mouseMoveThrottle = true;
+                    setTimeout(function() { window._mouseMoveThrottle = false; }, 2000);
+                }
+
+                if (!isDirty) {
+                    clearTimeout(idleTimer);
+                    idleTimer = setTimeout(showWarning, TIMEOUT_MS - WARNING_BEFORE_MS);
+                }
+            });
+        });
+
+        document.querySelectorAll('input:not([type="hidden"]), textarea, select').forEach(function (field) {
+            field.addEventListener('focus', pauseTimer);
+            field.addEventListener('input', pauseTimer);
+            field.addEventListener('blur', resumeTimer);
+        });
+
+        document.addEventListener('visibilitychange', function () {
+            if (document.hidden) {
+                clearTimeout(idleTimer);
+                clearTimeout(warningTimer);
+            } else {
+                if (!isDirty) startTimer();
+            }
+        });
+
+        if (document.body.dataset.authenticated === 'true') {
+            initFormDirtyDetection();
+            startTimer();
+        }
+    })();
+    </script>
+
+    <!-- Fallback visual si no hay SweetAlert2 -->
+    <div id="session-timeout-warning" class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl border border-amber-100 p-8 max-w-sm mx-4 text-center">
+            <div class="text-5xl mb-4">⏰</div>
+            <h2 class="text-xl font-bold text-slate-800 mb-2">Sesión por expirar</h2>
+            <p class="text-slate-600 mb-6">Tu sesión expirará en breve. ¿Deseas mantener la sesión activa?</p>
+            <div class="flex gap-3 justify-center">
+                <button id="keep-session-btn" class="bg-[#006B3F] hover:bg-[#005230] text-white font-medium py-2.5 px-5 rounded-xl transition-colors">Mantener sesión</button>
+                <a href="{% url 'logout' %}" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2.5 px-5 rounded-xl transition-colors">Cerrar ahora</a>
+            </div>
+        </div>
+    </div>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

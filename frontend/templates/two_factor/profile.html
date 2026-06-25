@@ -1,0 +1,60 @@
+{% extends 'two_factor/_base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Configuración de verificación en dos pasos" %}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto mt-10 mb-10">
+    <div class="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-50/50 p-10">
+        <h1 class="text-xl font-semibold text-gray-800 mb-6">{% trans "Configuración de verificación en dos pasos" %}</h1>
+
+        {% if default_device %}
+            <div class="mb-8">
+            <p class="text-sm text-gray-600 mb-4">
+                {% blocktrans %}
+                    La verificación en dos pasos está activada para tu cuenta usando el método:
+                {% endblocktrans %}
+                <strong>{{ default_device.name }}</strong>
+            </p>
+
+            <div class="flex gap-4">
+                {% if backup_tokens %}
+                    {% if backup_tokens|length == 1 %}
+                        <p class="text-sm text-yellow-700 bg-yellow-50 px-4 py-3 rounded-xl">
+                            {% trans "Te queda solo 1 token de respaldo. ¡Genera nuevos tokens de respaldo nuevos!" %}
+                        </p>
+                    {% else %}
+                        <p class="text-sm text-gray-600">
+                            {% blocktrans with count=backup_tokens|length %}
+                                Tienes {{ count }} tokens de respaldo disponibles.
+                            {% endblocktrans %}
+                        </p>
+                    {% endif %}
+                {% else %}
+                    <p class="text-sm text-gray-600">
+                        {% trans "No tienes tokens de respaldo generados." %}
+                    </p>
+                {% endif %}
+            </div>
+
+            <div class="mt-6 flex flex-wrap gap-3">
+                <a href="{% url 'two_factor:backup_tokens' %}" class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-3 px-4 rounded-xl transition-all duration-200">
+                    {% trans "Gestionar tokens de respaldo" %}
+                </a>
+                <a href="{% url 'two_factor:disable' %}" class="bg-red-100 hover:bg-red-200 text-red-800 font-medium py-3 px-4 rounded-xl transition-all duration-200">
+                    {% trans "Desactivar verificación en dos pasos" %}
+                </a>
+            </div>
+        {% else %}
+            <div class="text-center">
+                <p class="text-sm text-gray-600 mb-6">
+                    {% trans "La verificación en dos pasos no está activada para tu cuenta." %}
+                </p>
+                <a href="{% url 'two_factor:setup' %}" class="bg-[#006B3F] hover:bg-[#005230] text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 shadow-sm">
+                    {% trans "Activar verificación en dos pasos" %}
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

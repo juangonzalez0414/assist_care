@@ -1,0 +1,192 @@
+{% extends 'two_factor/_base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Configurar verificación en dos pasos" %}{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        background-color: #ecfdf5; /* Light teal background */
+    }
+</style>
+
+<div class="pt-8 pb-16">
+    <!-- Breadcrumb -->
+    <div class="max-w-5xl mx-auto px-4 mb-8">
+        <div class="flex items-center gap-2 text-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-600">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            <span class="text-gray-600">{% trans "Configuración de Seguridad" %}</span>
+            <span class="text-gray-400">›</span>
+            <span class="text-emerald-700 font-medium">{% trans "Autenticación de Dos Factores" %}</span>
+        </div>
+    </div>
+
+    <div class="max-w-5xl mx-auto px-4">
+        <div class="bg-white rounded-[2.5rem] shadow-2xl p-10 md:p-12">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <!-- Left Side - Form -->
+                <div>
+                    <h1 class="text-[2rem] font-semibold text-gray-900 mb-6 leading-tight">
+                        {% trans "Activar Autenticación de" %}<br>
+                        {% trans "Dos Factores" %}
+                    </h1>
+
+                    <p class="text-gray-600 mb-6 leading-relaxed">
+                        {% trans "Añade una capa adicional de seguridad a su cuenta. Para empezar, utilice su smartphone para escanear el código QR con una aplicación de autenticación como Google Authenticator o Microsoft Authenticator." %}
+                    </p>
+
+                    <!-- TOTP Secret -->
+                    {% if secret_key %}
+                    <div class="bg-emerald-50 rounded-2xl p-5 mb-8 border border-emerald-100">
+                        <p class="text-sm text-gray-700 font-medium mb-2">{% trans "Secreto TOTP (Configuración Manual)" %}</p>
+                        <div class="flex items-center gap-2">
+                            <code class="font-mono text-sm text-emerald-800 tracking-wider">{{ secret_key }}</code>
+                            <button onclick="copySecret()" class="text-emerald-700 hover:text-emerald-800 transition-colors" title="{% trans "Copiar" %}">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <form method="post" action="">
+                        {% csrf_token %}
+
+                        <div class="mb-8">
+                            <h2 class="text-lg font-semibold text-gray-800 mb-4">{% trans "Código de Verificación" %}</h2>
+
+                            {% for field in form %}
+                            <div class="relative">
+                                <input
+                                    name="{{ field.html_name }}"
+                                    type="text"
+                                    inputmode="numeric"
+                                    autocomplete="one-time-code"
+                                    placeholder="0 0 0 0 0 0"
+                                    class="w-full px-6 py-4 rounded-2xl border-2 border-gray-200 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 text-gray-900 text-2xl font-mono tracking-[0.5em] text-center"
+                                    required
+                                />
+                                {% if field.errors %}
+                                <div class="text-sm text-red-600 mt-2">{{ field.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+
+                            {% if form.non_field_errors %}
+                            <div class="text-sm text-red-600 mt-2">{{ form.non_field_errors.0 }}</div>
+                            {% endif %}
+
+                            <div class="flex items-center gap-2 mt-3 text-gray-500 text-sm">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                </svg>
+                                <span>{% trans "Introduzca el código de 6 dígitos generado por su aplicación." %}</span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between pt-6 border-t border-gray-100">
+                            <a href="{{ next_url|default:'/' }}" class="flex items-center gap-2 px-6 py-3 rounded-xl border-2 border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors font-medium">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                                    <polyline points="12 19 5 12 12 5"></polyline>
+                                </svg>
+                                {% trans "Volver" %}
+                            </a>
+
+                            <a href="{{ next_url|default:'/' }}" class="text-red-700 hover:text-red-800 font-medium transition-colors">
+                                {% trans "Cancelar Proceso" %}
+                            </a>
+
+                            <button type="submit" class="flex items-center gap-2 bg-[#143f2c] hover:bg-[#0f2f21] text-white font-medium py-4 px-10 rounded-xl shadow-xl shadow-emerald-900/30 transition-all">
+                                {% trans "Activar y Siguiente" %}
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    <polyline points="12 5 19 12 12 19"></polyline>
+                                </svg>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Right Side - QR Code -->
+                <div class="flex flex-col items-center justify-center">
+                    <div class="relative">
+                        <div class="bg-white rounded-[3rem] p-6 shadow-2xl">
+                            <div class="bg-[#2d6a5f] rounded-[2.5rem] p-12 flex items-center justify-center">
+                                <!-- Phone Mockup with QR -->
+                                <div class="relative">
+                                    <div class="bg-white rounded-3xl p-3 shadow-2xl w-48">
+                                        <div class="bg-gray-100 rounded-t-2xl h-4 flex items-center justify-center gap-1 mb-2">
+                                            <div class="w-10 h-1 bg-gray-300 rounded-full"></div>
+                                        </div>
+                                        <div class="bg-white rounded-b-2xl p-4">
+                                            <img src="{{ QR_URL }}" alt="{% trans "Código QR" %}" class="w-full h-auto rounded-xl" />
+                                            <p class="text-xs text-gray-500 text-center mt-2 font-medium">assistcare.com</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Small QR Badge -->
+                        <div class="absolute -bottom-3 -right-3 bg-[#143f2c] rounded-2xl p-3 shadow-xl">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="3" width="7" height="7"></rect>
+                                <rect x="3" y="14" width="7" height="7"></rect>
+                                <path d="M21 14h-3a1 1 0 0 0-1 1v6"></path>
+                                <path d="M14 21h7"></path>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <p class="text-gray-600 text-center mt-6 max-w-xs">
+                        {% trans "Escanee este código con su cámara o app 2FA" %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trust Badges -->
+    <div class="max-w-5xl mx-auto px-4 mt-10">
+        <div class="flex items-center justify-center gap-8 text-gray-500 text-sm">
+            <div class="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+                <span>HIPAA COMPLIANT</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                <span>SSL SECURE</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    <path d="M9 12l2 2 4-4"></path>
+                </svg>
+                <span>END-TO-END</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copySecret() {
+    const secret = "{{ secret_key|escapejs }}";
+    navigator.clipboard.writeText(secret).then(() => {
+        // Optional: Show a toast
+    });
+}
+</script>
+{% endblock %}

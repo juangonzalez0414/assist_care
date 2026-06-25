@@ -1,0 +1,151 @@
+{% load socialaccount %}
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Iniciar Sesión - Axius</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    {% include 'includes/global_ui_assets.html' %}
+</head>
+<body class="bg-gradient-to-tr from-[#edf7f4] via-[#f5fbf9] to-[#e4f3ee] min-h-screen flex flex-col justify-center items-center p-4 font-sans">
+    {% if messages %}
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 4000,
+                    timerProgressBar: true,
+                    iconColor: '#006B3F',
+                    background: '#ffffff',
+                    color: '#0f172a',
+                    customClass: {
+                        popup: 'rounded-3xl border border-emerald-100 bg-white shadow-[0_18px_45px_rgba(0,107,63,0.16)] px-4 py-3',
+                        title: 'text-slate-900 text-sm font-bold',
+                        htmlContainer: 'text-slate-600 text-xs mt-0.5',
+                        icon: 'border-0 bg-emerald-50 text-emerald-700',
+                        timerProgressBar: 'bg-emerald-500',
+                    },
+                });
+                {% for message in messages %}
+                    setTimeout(function () {
+                        toast.fire({
+                            icon: '{% if "error" in message.tags %}error{% elif "success" in message.tags %}success{% elif "warning" in message.tags %}warning{% else %}info{% endif %}',
+                            title: '{% if "error" in message.tags %}Atención{% elif "success" in message.tags %}Todo listo{% elif "warning" in message.tags %}Importante{% else %}Aviso{% endif %}',
+                            text: '{{ message|escapejs }}',
+                        });
+                    }, {{ forloop.counter0 }} * 450);
+                {% endfor %}
+            });
+        </script>
+    {% endif %}
+
+    <main class="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-50/50 p-10 max-w-md w-full">
+        <h1 class="text-xl font-semibold text-gray-800 text-center mb-2">Bienvenido a Axius</h1>
+        <p class="text-sm text-gray-500 text-center mb-8 leading-relaxed px-4">
+            Tu puente de confianza para el acompañamiento y la seguridad.
+        </p>
+
+        <form method="POST" action="{% url 'login' %}">
+            {% csrf_token %}
+
+            <div class="mb-5">
+                <label for="correo" class="text-sm font-medium text-gray-700 mb-1.5 block">Correo electrónico</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                            <path d="M4 6h16v12H4V6Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                            <path d="m4 7 8 6 8-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <input
+                        id="correo"
+                        name="correo"
+                        type="email"
+                        autocomplete="email"
+                        value="{{ form.correo.value|default_if_none:'' }}"
+                        placeholder="ejemplo@correo.com"
+                        class="w-full pl-10 pr-3 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#006B3F]/20 focus:border-[#006B3F] text-gray-900 placeholder:text-gray-400"
+                        required
+                    />
+                </div>
+                {% if form.correo.errors %}
+                    <div class="text-xs text-red-600 mt-2">{{ form.correo.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <div class="mb-2">
+                <div class="flex items-center justify-between mb-1.5">
+                    <label for="password" class="text-sm font-medium text-gray-700 block">Contraseña</label>
+                    <a href="{% url 'forgot_password' %}" class="text-[#006B3F] hover:underline text-xs font-medium">¿Olvidaste tu contraseña?</a>
+                </div>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                            <path d="M17 11V7a5 5 0 0 0-10 0v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                            <path d="M7 11h10v10H7V11Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <input
+                        id="password"
+                        name="password"
+                        type="password"
+                        autocomplete="current-password"
+                        placeholder="••••••••"
+                        class="w-full pl-10 pr-10 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#006B3F]/20 focus:border-[#006B3F] text-gray-900 placeholder:text-gray-400"
+                        required
+                    />
+                    <button type="button" id="togglePassword" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+                        <svg id="eyeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none">
+                            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/>
+                        </svg>
+                    </button>
+                </div>
+                {% if form.password.errors %}
+                    <div class="text-xs text-red-600 mt-2">{{ form.password.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <button type="submit" class="bg-[#006B3F] hover:bg-[#005230] text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 shadow-sm text-center w-full block mt-6">
+                Iniciar Sesión
+            </button>
+
+            <div class="flex items-center gap-4 my-6">
+                <div class="h-px bg-gray-200 flex-1"></div>
+                <div class="text-xs text-gray-400">o continuar con</div>
+                <div class="h-px bg-gray-200 flex-1"></div>
+            </div>
+
+            <a href="{% provider_login_url 'google' %}" class="w-full flex items-center justify-center gap-3 border border-gray-200 rounded-xl py-3 px-4 hover:bg-gray-50 transition-colors">
+                <svg width="18" height="18" viewBox="0 0 48 48">
+                    <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.806 32.66 29.348 36 24 36c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917Z"/>
+                    <path fill="#FF3D00" d="M6.306 14.691 12.87 19.51C14.655 15.109 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691Z"/>
+                    <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.191-5.238C29.211 35.091 26.715 36 24 36c-5.326 0-9.773-3.317-11.287-7.946l-6.518 5.02C9.505 39.556 16.227 44 24 44Z"/>
+                    <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.1 12.1 0 0 1-4.087 5.57l.003-.002 6.191 5.238C36.97 40.205 44 35 44 24c0-1.341-.138-2.65-.389-3.917Z"/>
+                </svg>
+                <span class="text-sm font-medium text-gray-700">Continuar con Google</span>
+            </a>
+
+            <div class="text-center mt-6 text-sm text-gray-600">
+                ¿No tienes una cuenta?
+                <a href="{% url 'registro' %}" class="text-[#006B3F] font-medium hover:underline">Regístrate</a>
+            </div>
+        </form>
+    </main>
+
+    <script>
+        (function () {
+            const btn = document.getElementById('togglePassword');
+            const input = document.getElementById('password');
+            if (!btn || !input) return;
+            btn.addEventListener('click', function () {
+                input.type = input.type === 'password' ? 'text' : 'password';
+            });
+        })();
+    </script>
+</body>
+</html>

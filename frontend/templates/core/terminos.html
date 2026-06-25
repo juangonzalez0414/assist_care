@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Términos y Condiciones · ASSIST CORE</title>
+    {% load static %}
+    <script src="https://cdn.tailwindcss.com"></script>
+    {% include 'includes/global_ui_assets.html' %}
+</head>
+<body class="bg-slate-50 text-slate-900">
+    <header class="sticky top-0 z-40 border-b border-slate-200 bg-slate-50/90 backdrop-blur">
+        <div class="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-6">
+            <a href="{% url 'home' %}" class="text-sm font-semibold text-emerald-700 hover:text-emerald-800">← Volver a la landing</a>
+            <div class="text-xs font-semibold text-slate-500">Legal</div>
+        </div>
+    </header>
+
+    <main class="mx-auto max-w-5xl px-4 py-10 sm:px-6">
+        <div class="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200">
+            <div class="bg-gradient-to-r from-emerald-500 to-teal-600 px-6 py-8 text-white sm:px-10">
+                <div class="text-xs font-semibold uppercase tracking-[0.22em] text-white/85">ASSIST CORE</div>
+                <h1 class="mt-2 text-2xl font-extrabold sm:text-3xl">Términos y Condiciones de Uso</h1>
+                <div class="mt-3 text-sm text-white/90">Última actualización: {{ fecha_actualizacion|default:"[Fecha]" }}</div>
+            </div>
+
+            <div class="px-6 py-8 text-sm leading-7 text-slate-700 sm:px-10">
+                <p>
+                    Bienvenido(a) a ASSIST CORE. Al registrarte y utilizar esta plataforma, aceptas los presentes términos y condiciones.
+                    Si no estás de acuerdo con alguno de ellos, te recomendamos no utilizar nuestros servicios.
+                </p>
+
+                <div class="mt-6 space-y-5">
+                    <section>
+                        <h2 class="text-base font-bold text-slate-900">1. Objeto</h2>
+                        <p class="mt-2">
+                            ASSIST CORE es una plataforma tecnológica diseñada para facilitar la conexión entre personas con discapacidad que requieren asistencia y personal de enfermería previamente validado por el sistema.
+                        </p>
+                    </section>
+
+                    <section>
+                        <h2 class="text-base font-bold text-slate-900">2. Registro de usuarios</h2>
+                        <ul class="mt-2 list-disc pl-5 space-y-1">
+                            <li>Los usuarios deberán proporcionar información veraz y actualizada durante el proceso de registro.</li>
+                            <li>Los enfermeros deberán adjuntar las certificaciones y licencias requeridas para la validación de su perfil.</li>
+                            <li>El administrador se reserva el derecho de aprobar o rechazar el acceso del personal de enfermería cuando la documentación presentada no cumpla con los requisitos establecidos.</li>
+                        </ul>
+                    </section>
+
+                    <section>
+                        <h2 class="text-base font-bold text-slate-900">3. Responsabilidades del paciente</h2>
+                        <p class="mt-2">El paciente se compromete a:</p>
+                        <ul class="mt-2 list-disc pl-5 space-y-1">
+                            <li>Utilizar la plataforma de manera responsable.</li>
+                            <li>Proporcionar información correcta sobre la dirección en la que requiere asistencia.</li>
+                            <li>Mantener la confidencialidad de sus credenciales de acceso.</li>
+                            <li>Realizar calificaciones respetuosas y basadas en la experiencia recibida.</li>
+                        </ul>
+                    </section>
+
+                    <section>
+                        <h2 class="text-base font-bold text-slate-900">4. Responsabilidades del enfermero</h2>
+                        <p class="mt-2">El enfermero se compromete a:</p>
+                        <ul class="mt-2 list-disc pl-5 space-y-1">
+                            <li>Presentar documentación auténtica y vigente.</li>
+                            <li>Brindar atención de manera ética y profesional.</li>
+                            <li>Mantener actualizada su información dentro de la plataforma.</li>
+                            <li>Utilizar la aplicación únicamente para fines relacionados con la prestación del servicio.</li>
+                        </ul>
+                    </section>
+
+                    <section>
+                        <h2 class="text-base font-bold text-slate-900">5. Limitación de responsabilidad</h2>
+                        <p class="mt-2">
+                            ASSIST CORE actúa como un medio de conexión entre pacientes y enfermeros. La plataforma no reemplaza los servicios médicos de emergencia ni realiza diagnósticos, tratamientos o procedimientos clínicos especializados.
+                        </p>
+                    </section>
+
+                    <section>
+                        <h2 class="text-base font-bold text-slate-900">6. Suspensión o eliminación de cuentas</h2>
+                        <p class="mt-2">ASSIST CORE podrá suspender o eliminar cuentas que:</p>
+                        <ul class="mt-2 list-disc pl-5 space-y-1">
+                            <li>Presenten información falsa.</li>
+                            <li>Hagan un uso inadecuado de la plataforma.</li>
+                            <li>Incumplan los presentes términos y condiciones.</li>
+                        </ul>
+                        <p class="mt-2">Los usuarios también podrán solicitar la eliminación de su cuenta en cualquier momento.</p>
+                    </section>
+
+                    <section>
+                        <h2 class="text-base font-bold text-slate-900">7. Modificaciones</h2>
+                        <p class="mt-2">
+                            ASSIST CORE podrá actualizar estos términos y condiciones cuando sea necesario. Las modificaciones serán informadas a través de la plataforma.
+                        </p>
+                    </section>
+
+                    <section>
+                        <h2 class="text-base font-bold text-slate-900">8. Aceptación</h2>
+                        <p class="mt-2">
+                            El uso continuo de la aplicación implica la aceptación de los presentes términos y condiciones.
+                        </p>
+                    </section>
+                </div>
+
+                <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+                    <a href="{% url 'home' %}#donaciones" class="inline-flex items-center justify-center rounded-full bg-emerald-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-700">
+                        Apoyar la causa
+                    </a>
+                    <a href="{% url 'home' %}" class="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-50">
+                        Ir al inicio
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

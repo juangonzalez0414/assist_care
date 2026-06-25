@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Assist Care · Solicitar ayuda</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    {% include 'includes/global_ui_assets.html' %}
+</head>
+<body class="min-h-screen bg-slate-50 font-sans">
+    {% if messages %}
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 4000,
+                    timerProgressBar: true,
+                    background: '#1f2937',
+                    color: '#ffffff',
+                    iconColor: '#ffffff',
+                });
+                {% for message in messages %}
+                    setTimeout(function () {
+                        toast.fire({
+                            icon: '{% if "error" in message.tags %}error{% elif "success" in message.tags %}success{% elif "warning" in message.tags %}warning{% else %}info{% endif %}',
+                            title: '{% if "error" in message.tags %}¡Atención!{% elif "success" in message.tags %}¡Éxito!{% else %}Aviso{% endif %}',
+                            text: '{{ message|escapejs }}',
+                        });
+                    }, {{ forloop.counter0 }} * 450);
+                {% endfor %}
+            });
+        </script>
+    {% endif %}
+
+    <header class="bg-[#11315c] text-white">
+        <div class="max-w-5xl mx-auto px-6 py-6 flex items-center justify-between gap-4">
+            <div>
+                <div class="text-lg font-bold tracking-tight">Assist Care</div>
+                <div class="text-xs text-white/80 font-semibold -mt-0.5">Solicitud de Acompañamiento</div>
+            </div>
+            <a href="{% url 'dashboard_discapacitado' %}" class="text-sm font-semibold text-white/90 hover:text-white underline underline-offset-4">
+                Volver al dashboard
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-6 py-10">
+        <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="px-8 py-6 border-b border-gray-100">
+                <h1 class="text-xl font-bold text-gray-900">Nueva solicitud</h1>
+                <p class="text-sm text-gray-600 mt-1">
+                    Completa estos datos para crear tu solicitud. Un enfermero podrá postularse cuando esté disponible.
+                </p>
+            </div>
+
+            <form method="POST" class="p-8 space-y-6" id="form-crear-solicitud">
+                {% csrf_token %}
+
+                <div>
+                    <label for="titulo" class="text-sm font-semibold text-gray-700">Motivo / Título</label>
+                    <input
+                        id="titulo"
+                        name="titulo"
+                        value="{{ form.titulo.value|default:'' }}"
+                        placeholder="Ej: Cita médica, Acompañamiento a almuerzo..."
+                        required
+                        class="mt-2 w-full bg-slate-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#11315c]/20 focus:border-[#11315c]"
+                    />
+                    {% if form.titulo.errors %}
+                        <div class="mt-2 text-sm text-red-600 font-semibold">{{ form.titulo.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label for="descripcion" class="text-sm font-semibold text-gray-700">Descripción detallada</label>
+                    <textarea
+                        id="descripcion"
+                        name="descripcion"
+                        rows="4"
+                        placeholder="Describe qué apoyo necesitas, condiciones especiales, tiempos, etc."
+                        required
+                        class="mt-2 w-full bg-slate-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#11315c]/20 focus:border-[#11315c] resize-none"
+                    >{{ form.descripcion.value|default:'' }}</textarea>
+                    {% if form.descripcion.errors %}
+                        <div class="mt-2 text-sm text-red-600 font-semibold">{{ form.descripcion.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="fecha" class="text-sm font-semibold text-gray-700">Fecha del evento</label>
+                        <input
+                            id="fecha"
+                            name="fecha_evento_fecha"
+                            type="date"
+                            value="{{ form.fecha_evento_fecha.value|default:'' }}"
+                            required
+                            class="mt-2 w-full bg-slate-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#11315c]/20 focus:border-[#11315c]"
+                        />
+                        {% if form.fecha_evento_fecha.errors %}
+                            <div class="mt-2 text-sm text-red-600 font-semibold">{{ form.fecha_evento_fecha.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <label for="hora" class="text-sm font-semibold text-gray-700">Hora</label>
+                        <input
+                            id="hora"
+                            name="fecha_evento_hora"
+                            type="time"
+                            value="{{ form.fecha_evento_hora.value|default:'' }}"
+                            required
+                            class="mt-2 w-full bg-slate-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#11315c]/20 focus:border-[#11315c]"
+                        />
+                        {% if form.fecha_evento_hora.errors %}
+                            <div class="mt-2 text-sm text-red-600 font-semibold">{{ form.fecha_evento_hora.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="ciudad" class="text-sm font-semibold text-gray-700">Ciudad</label>
+                        <input
+                            id="ciudad"
+                            name="ciudad"
+                            value="{{ form.ciudad.value|default:'Ibagué' }}"
+                            required
+                            class="mt-2 w-full bg-slate-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#11315c]/20 focus:border-[#11315c]"
+                        />
+                        {% if form.ciudad.errors %}
+                            <div class="mt-2 text-sm text-red-600 font-semibold">{{ form.ciudad.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <label for="direccion" class="text-sm font-semibold text-gray-700">Ubicación / Dirección</label>
+                        <input
+                            id="direccion"
+                            name="direccion"
+                            value="{{ form.direccion.value|default:'Ibagué' }}"
+                            placeholder="Ej: Cra 5 # 12-34, Barrio Centro"
+                            class="mt-2 w-full bg-slate-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#11315c]/20 focus:border-[#11315c]"
+                        />
+                        {% if form.direccion.errors %}
+                            <div class="mt-2 text-sm text-red-600 font-semibold">{{ form.direccion.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if form.non_field_errors %}
+                    <div class="rounded-2xl bg-red-50 border border-red-100 p-4 text-sm text-red-700 font-semibold">
+                        {{ form.non_field_errors.0 }}
+                    </div>
+                {% endif %}
+
+                <div class="flex flex-col md:flex-row justify-end gap-3 pt-2">
+                    <a href="{% url 'dashboard_discapacitado' %}" class="inline-flex items-center justify-center bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 font-semibold py-3 px-6 rounded-xl text-sm transition-colors">
+                        Cancelar
+                    </a>
+                    <button type="submit" id="btn-enviar-solicitud" class="inline-flex items-center justify-center bg-[#11315c] hover:bg-slate-800 text-white font-semibold py-3 px-6 rounded-xl text-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
+                        Enviar Solicitud de Acompañamiento
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('form-crear-solicitud');
+            const btn = document.getElementById('btn-enviar-solicitud');
+            if (!form || !btn) return;
+
+            form.addEventListener('submit', function () {
+                if (btn.disabled) return;
+                btn.disabled = true;
+                btn.textContent = 'Procesando...';
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+Django>=5.2,<6
+django-allauth>=0.60
+django-environ>=0.11
+dj-database-url>=2.2
+python-dotenv>=1.0
+psycopg2-binary>=2.9
+Pillow>=10
+openpyxl>=3.1
+reportlab>=4.0
+requests>=2.31
+PyJWT>=2.8
+cryptography>=42.0
+numpy>=1.26
+opencv-python-headless>=4.10
+django-otp>=1.10

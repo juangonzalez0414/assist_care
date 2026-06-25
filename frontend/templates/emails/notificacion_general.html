@@ -1,0 +1,109 @@
+{% if plain_text %}
+{{ headline }}
+
+{{ message }}
+{% if details %}
+
+Detalles:
+{% for item in details %}- {{ item.label }}: {{ item.value }}
+{% endfor %}
+{% endif %}
+{% if cta_url and cta_text %}
+
+{{ cta_text }}: {{ cta_url }}
+{% endif %}
+{% if footer_note %}
+
+{{ footer_note }}
+{% endif %}
+
+Assist Care
+{% else %}
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>{{ headline }}</title>
+  </head>
+  <body style="margin:0;padding:0;background:#edf7f4;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#edf7f4;padding:24px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px;background:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 14px 36px rgba(0,0,0,.08);">
+            <tr>
+              <td style="background:linear-gradient(135deg,#0b2f24 0%,#006b3f 55%,#1f8f63 100%);padding:22px 24px;color:#fff;">
+                <div style="font-size:18px;font-weight:800;letter-spacing:-.2px;">Assist Care</div>
+                <div style="font-size:12px;opacity:.88;font-weight:600;margin-top:3px;">Notificacion automatica de la plataforma</div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:26px 24px 10px 24px;">
+                <div style="display:inline-block;background:#e1f5ee;border:1px solid #cbeee2;color:#065f46;font-size:11px;font-weight:800;padding:6px 10px;border-radius:999px;letter-spacing:.08em;text-transform:uppercase;">
+                  {{ status_label|default:"Notificacion" }}
+                </div>
+                <h1 style="margin:16px 0 0 0;font-size:24px;line-height:1.22;color:#0b2f24;letter-spacing:-.3px;">{{ headline }}</h1>
+                <p style="margin:12px 0 0 0;font-size:14px;line-height:1.7;color:#315348;">{{ message }}</p>
+              </td>
+            </tr>
+            {% if details %}
+            <tr>
+              <td style="padding:18px 24px 0 24px;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4fbf7;border:1px solid #d7eee4;border-radius:18px;">
+                  <tr>
+                    <td style="padding:16px 18px;">
+                      <div style="font-size:13px;font-weight:800;color:#0b2f24;">Detalles importantes</div>
+                      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top:10px;border-collapse:collapse;">
+                        {% for item in details %}
+                        <tr>
+                          <td style="padding:8px 0;color:#5e7e72;font-size:12px;vertical-align:top;width:38%;">{{ item.label }}</td>
+                          <td style="padding:8px 0;color:#16372d;font-size:13px;font-weight:600;vertical-align:top;">{{ item.value }}</td>
+                        </tr>
+                        {% endfor %}
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            {% endif %}
+            {% if cta_url and cta_text %}
+            <tr>
+              <td style="padding:22px 24px 8px 24px;">
+                <a href="{{ cta_url }}" style="display:inline-block;background:#006b3f;color:#ffffff;text-decoration:none;font-weight:800;font-size:14px;padding:13px 18px;border-radius:14px;">
+                  {{ cta_text }}
+                </a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:12px 24px 0 24px;">
+                <div style="font-size:12px;line-height:1.65;color:#6b7280;">
+                  Si el boton no funciona, copia y pega este enlace en tu navegador:
+                </div>
+                <div style="margin-top:8px;font-size:12px;line-height:1.65;word-break:break-all;">
+                  <a href="{{ cta_url }}" style="color:#006b3f;text-decoration:underline;">{{ cta_url }}</a>
+                </div>
+              </td>
+            </tr>
+            {% endif %}
+            {% if footer_note %}
+            <tr>
+              <td style="padding:18px 24px 24px 24px;">
+                <div style="font-size:12px;line-height:1.65;color:#6b7280;">
+                  {{ footer_note }}
+                </div>
+              </td>
+            </tr>
+            {% endif %}
+            <tr>
+              <td style="background:#e8f5ef;padding:14px 24px;color:#557669;font-size:12px;line-height:1.5;">
+                © {% now "Y" %} Assist Care · Comunicacion segura y trazable
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+{% endif %}

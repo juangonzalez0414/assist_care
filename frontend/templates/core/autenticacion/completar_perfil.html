@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Completar perfil - Assist</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    {% include 'includes/global_ui_assets.html' %}
+</head>
+<body class="bg-gradient-to-tr from-[#edf7f4] via-[#f5fbf9] to-[#e4f3ee] min-h-screen flex flex-col justify-center items-center p-4 font-sans">
+    {% if messages %}
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 4000,
+                    timerProgressBar: true,
+                    background: '#1f2937',
+                    color: '#ffffff',
+                    iconColor: '#ffffff',
+                });
+                {% for message in messages %}
+                    setTimeout(function () {
+                        toast.fire({
+                            icon: '{% if "error" in message.tags %}error{% elif "success" in message.tags %}success{% elif "warning" in message.tags %}warning{% else %}info{% endif %}',
+                            title: '{% if "error" in message.tags %}¡Atención!{% elif "success" in message.tags %}¡Éxito!{% else %}Aviso{% endif %}',
+                            text: '{{ message|escapejs }}',
+                        });
+                    }, {{ forloop.counter0 }} * 450);
+                {% endfor %}
+            });
+        </script>
+    {% endif %}
+
+    <div class="text-3xl font-semibold text-gray-900 mb-6 tracking-tight text-center">Assist</div>
+
+    <main class="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-50/50 p-10 max-w-2xl w-full">
+        <h1 class="text-xl font-semibold text-gray-800 text-center mb-2">Completa tu perfil</h1>
+        <p class="text-sm text-gray-500 text-center mb-8 leading-relaxed px-4">
+            Para proteger la comunidad Assist, necesitamos validar tu identidad antes de habilitar tu portal.
+        </p>
+
+        <div class="mb-6 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+            <div class="text-xs text-gray-500">Cuenta</div>
+            <div class="text-sm font-medium text-gray-800">{{ email }}</div>
+        </div>
+
+        <form method="POST" enctype="multipart/form-data" class="space-y-6">
+            {% csrf_token %}
+
+            <div>
+                <label for="rol" class="text-sm font-medium text-gray-700 mb-1.5 block">¿Cómo deseas participar?</label>
+                <select id="rol" name="rol" class="w-full px-3 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#006B3F]/20 focus:border-[#006B3F] text-gray-900">
+                    {% for value, label in form.fields.rol.choices %}
+                        <option value="{{ value }}" {% if form.rol.value == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+                {% if form.rol.errors %}
+                    <div class="text-xs text-red-600 mt-2">{{ form.rol.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                    <label for="nombres" class="text-sm font-medium text-gray-700 mb-1.5 block">Nombres</label>
+                    <input id="nombres" name="nombres" type="text" value="{{ form.nombres.value|default_if_none:'' }}" class="w-full px-3 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#006B3F]/20 focus:border-[#006B3F] text-gray-900" required />
+                    {% if form.nombres.errors %}
+                        <div class="text-xs text-red-600 mt-2">{{ form.nombres.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div>
+                    <label for="apellidos" class="text-sm font-medium text-gray-700 mb-1.5 block">Apellidos</label>
+                    <input id="apellidos" name="apellidos" type="text" value="{{ form.apellidos.value|default_if_none:'' }}" class="w-full px-3 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#006B3F]/20 focus:border-[#006B3F] text-gray-900" required />
+                    {% if form.apellidos.errors %}
+                        <div class="text-xs text-red-600 mt-2">{{ form.apellidos.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                    <label for="cedula" class="text-sm font-medium text-gray-700 mb-1.5 block">Cédula</label>
+                    <input id="cedula" name="cedula" type="text" inputmode="numeric" pattern="[0-9]*" value="{{ form.cedula.value|default_if_none:'' }}" class="w-full px-3 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#006B3F]/20 focus:border-[#006B3F] text-gray-900" required />
+                    {% if form.cedula.errors %}
+                        <div class="text-xs text-red-600 mt-2">{{ form.cedula.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div>
+                    <label for="ciudad" class="text-sm font-medium text-gray-700 mb-1.5 block">Ciudad</label>
+                    <select id="ciudad" name="ciudad" class="w-full px-3 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#006B3F]/20 focus:border-[#006B3F] text-gray-900" required>
+                        {% for group_label, group_options in form.fields.ciudad.choices %}
+                            <optgroup label="{{ group_label }}">
+                                {% for value, label in group_options %}
+                                    <option value="{{ value }}" {% if form.ciudad.value == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </optgroup>
+                        {% endfor %}
+                    </select>
+                    {% if form.ciudad.errors %}
+                        <div class="text-xs text-red-600 mt-2">{{ form.ciudad.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                    <label for="fecha_nacimiento" class="text-sm font-medium text-gray-700 mb-1.5 block">Fecha de nacimiento</label>
+                    <input id="fecha_nacimiento" name="fecha_nacimiento" type="date" value="{{ form.fecha_nacimiento.value|default_if_none:'' }}" class="w-full px-3 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#006B3F]/20 focus:border-[#006B3F] text-gray-900" required />
+                    {% if form.fecha_nacimiento.errors %}
+                        <div class="text-xs text-red-600 mt-2">{{ form.fecha_nacimiento.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div>
+                    <label for="sexo" class="text-sm font-medium text-gray-700 mb-1.5 block">Sexo</label>
+                    <select id="sexo" name="sexo" class="w-full px-3 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#006B3F]/20 focus:border-[#006B3F] text-gray-900" required>
+                        {% for value, label in form.fields.sexo.choices %}
+                            <option value="{{ value }}" {% if form.sexo.value == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if form.sexo.errors %}
+                        <div class="text-xs text-red-600 mt-2">{{ form.sexo.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div>
+                <label for="cedula_documento" class="text-sm font-medium text-gray-700 mb-1.5 block">Cédula escaneada (PDF o imagen)</label>
+                <input id="cedula_documento" name="cedula_documento" type="file" accept="image/*,application/pdf" class="w-full px-3 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-[#006B3F]/20 focus:border-[#006B3F] text-gray-900" required />
+                {% if form.cedula_documento.errors %}
+                    <div class="text-xs text-red-600 mt-2">{{ form.cedula_documento.errors.0 }}</div>
+                {% endif %}
+            </div>
+
+            <div id="pacienteFields" class="space-y-6">
+                <div>
+                    <label for="url_certificado_discapacidad" class="text-sm font-medium text-gray-700 mb-1.5 block">Certificado de discapacidad (PDF)</label>
+                    <div class="rounded-2xl border-2 border-dashed border-emerald-200 bg-emerald-50/60 p-5 text-center">
+                        <div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[#006B3F] shadow-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v2.25A2.25 2.25 0 0 1 17.25 18.75H6.75A2.25 2.25 0 0 1 4.5 16.5v-2.25M16.5 10.5 12 6m0 0L7.5 10.5M12 6v9" />
+                            </svg>
+                        </div>
+                        <div class="text-sm font-semibold text-slate-800">Arrastra tu PDF aquí o selecciónalo desde tu dispositivo</div>
+                        <div class="mt-1 text-xs text-slate-500">Solo se permite certificado en formato PDF.</div>
+                        <input id="url_certificado_discapacidad" name="url_certificado_discapacidad" type="file" accept=".pdf,application/pdf" class="mt-4 block w-full rounded-xl border border-emerald-100 bg-white px-4 py-3 text-sm text-slate-700 file:mr-3 file:rounded-xl file:border-0 file:bg-[#006B3F] file:px-4 file:py-2 file:font-medium file:text-white hover:file:bg-[#005230] focus:outline-none focus:ring-2 focus:ring-[#006B3F]/20 focus:border-[#006B3F]" />
+                    </div>
+                    {% if form.url_certificado_discapacidad.errors %}
+                        <div class="text-xs text-red-600 mt-2">{{ form.url_certificado_discapacidad.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div id="enfermeroFields" class="space-y-6">
+                <div>
+                    <label for="telefono_whatsapp" class="text-sm font-medium text-gray-700 mb-1.5 block">Teléfono WhatsApp</label>
+                    <div class="flex">
+                        <div class="px-3 py-3 rounded-l-xl border border-gray-200 bg-gray-50 text-gray-600 text-sm flex items-center">+57</div>
+                        <input id="telefono_whatsapp" name="telefono_whatsapp" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="10" value="{{ form.telefono_whatsapp.value|default_if_none:'' }}" placeholder="3001234567" class="w-full px-3 py-3 rounded-r-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#006B3F]/20 focus:border-[#006B3F] text-gray-900" />
+                    </div>
+                    {% if form.telefono_whatsapp.errors %}
+                        <div class="text-xs text-red-600 mt-2">{{ form.telefono_whatsapp.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div>
+                    <label for="url_tarjeta_profesional" class="text-sm font-medium text-gray-700 mb-1.5 block">Tarjeta profesional (PDF)</label>
+                    <div class="rounded-2xl border-2 border-dashed border-emerald-200 bg-emerald-50/60 p-5 text-center">
+                        <div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[#006B3F] shadow-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v2.25A2.25 2.25 0 0 1 17.25 18.75H6.75A2.25 2.25 0 0 1 4.5 16.5v-2.25M16.5 10.5 12 6m0 0L7.5 10.5M12 6v9" />
+                            </svg>
+                        </div>
+                        <div class="text-sm font-semibold text-slate-800">Adjunta tu tarjeta profesional en PDF</div>
+                        <div class="mt-1 text-xs text-slate-500">Solo se permite el documento profesional en formato PDF.</div>
+                        <input id="url_tarjeta_profesional" name="url_tarjeta_profesional" type="file" accept=".pdf,application/pdf" class="mt-4 block w-full rounded-xl border border-emerald-100 bg-white px-4 py-3 text-sm text-slate-700 file:mr-3 file:rounded-xl file:border-0 file:bg-[#006B3F] file:px-4 file:py-2 file:font-medium file:text-white hover:file:bg-[#005230] focus:outline-none focus:ring-2 focus:ring-[#006B3F]/20 focus:border-[#006B3F]" />
+                    </div>
+                    {% if form.url_tarjeta_profesional.errors %}
+                        <div class="text-xs text-red-600 mt-2">{{ form.url_tarjeta_profesional.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <button type="submit" class="bg-[#006B3F] hover:bg-[#005230] text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 shadow-sm text-center w-full block">
+                Enviar para verificación
+            </button>
+
+            <div class="text-center text-sm text-gray-600">
+                ¿Quieres cambiar de cuenta?
+                <a href="{% url 'logout' %}" class="text-[#006B3F] font-medium hover:underline">Cerrar sesión</a>
+            </div>
+        </form>
+    </main>
+
+    <div class="text-xs text-gray-400 mt-8 text-center">
+        © {% now "Y" %} Assist. Seguridad y confianza en cada paso.
+    </div>
+
+    <script>
+        (function () {
+            const rol = document.getElementById('rol');
+            const pacienteFields = document.getElementById('pacienteFields');
+            const enfermeroFields = document.getElementById('enfermeroFields');
+            const certificadoInput = document.getElementById('url_certificado_discapacidad');
+            const telefonoInput = document.getElementById('telefono_whatsapp');
+            const tarjetaInput = document.getElementById('url_tarjeta_profesional');
+
+            function sync() {
+                const v = (rol && rol.value) ? rol.value : '';
+                const isEnfermero = v === 'enfermero';
+                if (pacienteFields) pacienteFields.style.display = isEnfermero ? 'none' : 'block';
+                if (enfermeroFields) enfermeroFields.style.display = isEnfermero ? 'block' : 'none';
+                if (certificadoInput) certificadoInput.required = !isEnfermero;
+                if (telefonoInput) telefonoInput.required = isEnfermero;
+                if (tarjetaInput) tarjetaInput.required = isEnfermero;
+            }
+
+            if (rol) rol.addEventListener('change', sync);
+            sync();
+        })();
+    </script>
+</body>
+</html>

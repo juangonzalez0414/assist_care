@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard Acompañante - Acompañamiento Seguro{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <h2>Panel de Control - Acompañante</h2>
+    <div class="welcome-card">
+        <h3>Bienvenido, {{ user.nombre }}</h3>
+        <p>Tu labor es fundamental para nuestra comunidad.</p>
+    </div>
+
+    <div class="actions-grid">
+        <div class="action-card">
+            <h4>Ver Solicitudes</h4>
+            <p>Revisa las personas que necesitan apoyo cerca de ti.</p>
+            <a href="{% url 'aceptar_solicitud' %}" class="btn-primary">Ver Disponibles</a>
+        </div>
+        <div class="action-card">
+            <h4>Mis Acompañamientos</h4>
+            <p>Revisa tu historial y servicios en curso.</p>
+            <a href="#" class="btn-primary">Ver Historial</a>
+        </div>
+    </div>
+</div>
+
+<style>
+.dashboard-container { margin-top: 30px; }
+.welcome-card { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+.actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.action-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 4px solid #2f855a; }
+.action-card h4 { margin-bottom: 10px; color: #22543d; }
+.action-card p { margin-bottom: 15px; font-size: 16px; }
+</style>
+{% endblock %}

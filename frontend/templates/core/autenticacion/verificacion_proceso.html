@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Verificación en Proceso - Assist</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in { animation: fadeIn 420ms ease-out both; }
+        .ax-grid {
+            background-image:
+                linear-gradient(to right, rgba(15, 23, 42, 0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(15, 23, 42, 0.05) 1px, transparent 1px);
+            background-size: 44px 44px;
+        }
+    </style>
+    {% include 'includes/global_ui_assets.html' %}
+</head>
+<body class="bg-[#edf7f4] ax-grid min-h-screen flex flex-col justify-between items-center p-6 font-sans relative">
+    <div class="flex flex-col items-center text-center max-w-md w-full my-auto animate-fade-in">
+        <div class="bg-[#0b2f24] w-14 h-14 rounded-full flex items-center justify-center shadow-md mb-6">
+            <svg class="animate-spin" width="26" height="26" viewBox="0 0 24 24" fill="none">
+                <path opacity="0.25" d="M12 3a9 9 0 1 0 9 9" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round"/>
+                <path d="M21 12a9 9 0 0 0-9-9" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round"/>
+            </svg>
+        </div>
+
+        <h1 class="text-3xl font-bold text-[#0b2f24] mb-4 tracking-tight">Verificación en Proceso</h1>
+        <p class="text-gray-600 text-sm leading-relaxed mb-8 px-2">
+            Estamos revisando tu perfil para garantizar la seguridad de nuestra comunidad. Recibirás una notificación en cuanto tu cuenta sea activada.
+        </p>
+
+        <div class="bg-[#e1f5ee] rounded-2xl p-4 flex items-center gap-4 border border-[#cbeee2] w-full mb-8 shadow-sm">
+            <div class="w-10 h-10 rounded-full bg-emerald-200/70 flex items-center justify-center text-[#0b2f24] flex-shrink-0">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                    <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/>
+                </svg>
+            </div>
+            <div class="text-left">
+                <span class="text-[10px] font-bold text-emerald-800 tracking-wider block mb-0.5">ESTADO DE TU SOLICITUD</span>
+                <div class="text-sm font-semibold text-[#0b2f24]">Revisión manual por el equipo médico</div>
+            </div>
+        </div>
+
+        <a href="{% url 'home' %}" class="bg-[#0b2f24] hover:bg-[#123d30] text-white font-medium py-3.5 px-8 rounded-xl transition-all duration-200 w-full shadow-sm text-sm">
+            Volver al Inicio
+        </a>
+        <a href="#" onclick="return false;" class="text-xs text-gray-500 hover:text-gray-800 underline mt-5 block cursor-pointer">
+            ¿Tienes dudas sobre el proceso?
+        </a>
+    </div>
+
+    <div class="bg-[#e1f5ee] text-[#0b2f24] text-[11px] font-medium px-3 py-1.5 rounded-full tracking-wide shadow-sm mb-4">
+        • Ecosistema Assist Care
+    </div>
+</body>
+</html>
+

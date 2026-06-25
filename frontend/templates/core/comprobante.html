@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Comprobante de pago{% endblock %}
+
+{% block content %}
+<div class="min-h-[calc(100vh-160px)] bg-slate-50 px-4 py-12 sm:px-6 lg:px-10">
+    <div class="mx-auto w-full max-w-2xl">
+        <div class="overflow-hidden rounded-3xl bg-white shadow-[0_24px_80px_rgba(15,23,42,0.12)] ring-1 ring-slate-200">
+            <div class="bg-gradient-to-r from-emerald-500 to-teal-600 px-6 py-8 text-white sm:px-10">
+                <div class="flex items-center gap-4">
+                    <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 ring-1 ring-white/25">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 6 9 17l-5-5"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="text-xs font-semibold uppercase tracking-[0.22em] text-white/85">Confirmación</div>
+                        <h1 class="mt-1 text-2xl font-extrabold sm:text-3xl">¡Donación Exitosa!</h1>
+                        <p class="mt-2 text-sm text-white/90">Gracias por apoyar a Assist Care.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-6 py-8 sm:px-10">
+                <div class="rounded-2xl bg-slate-50 px-5 py-6 ring-1 ring-slate-100">
+                    <div class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Monto aportado</div>
+                    <div class="mt-3 text-3xl font-black tracking-tight text-slate-900">
+                        ${{ monto|default:"155000" }} COP
+                    </div>
+                    <div class="mt-2 text-sm text-slate-600">
+                        Pasarela: <span class="font-semibold text-slate-800">{{ pasarela|default:"ePayco" }}</span>
+                    </div>
+                </div>
+
+                <div class="mt-8 overflow-hidden rounded-2xl border border-slate-100">
+                    <div class="divide-y divide-slate-100">
+                        <div class="flex items-center justify-between gap-4 px-5 py-4">
+                            <div class="text-sm font-semibold text-slate-600">Estado</div>
+                            <span class="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-100">
+                                {{ estado_label|default:estado|default:"Aprobada" }}
+                            </span>
+                        </div>
+                        <div class="flex items-center justify-between gap-4 px-5 py-4">
+                            <div class="text-sm font-semibold text-slate-600">Referencia ePayco</div>
+                            <div class="break-all text-right text-sm font-mono text-slate-900">{{ referencia|default:"DONACION-DEMO" }}</div>
+                        </div>
+                        <div class="flex items-center justify-between gap-4 px-5 py-4">
+                            <div class="text-sm font-semibold text-slate-600">ID Transacción</div>
+                            <div class="break-all text-right text-sm font-mono text-slate-900">{{ transaccion_id|default:"DEMO" }}</div>
+                        </div>
+                        <div class="flex items-center justify-between gap-4 px-5 py-4">
+                            <div class="text-sm font-semibold text-slate-600">Medio de pago</div>
+                            <div class="text-right text-sm font-semibold text-slate-900">{{ metodo_pago_limpio|default:"N/A" }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 text-sm leading-7 text-slate-600">
+                    {{ mensaje|default:"Pago procesado." }}
+                </div>
+
+                <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+                    <a href="{% url 'home' %}#donaciones" class="inline-flex flex-1 items-center justify-center rounded-full bg-emerald-600 px-6 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-700">
+                        Volver a Donaciones
+                    </a>
+                    <a href="{% url 'home' %}" class="inline-flex flex-1 items-center justify-center rounded-full border border-slate-200 bg-white px-6 py-3.5 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-50">
+                        Ir al Inicio
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

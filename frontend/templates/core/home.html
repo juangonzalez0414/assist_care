@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assist Care | Cuidado inclusivo y confiable</title>
+
+    {% load static %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    {% include 'includes/global_ui_assets.html' %}
+
+    <style>
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+        }
+        .display-title {
+            letter-spacing: -0.04em;
+        }
+        .landing-nav-link-active {
+            color: #123524;
+        }
+    </style>
+</head>
+<body class="bg-[#edf7f2] text-[#143326] overflow-x-hidden">
+    <header class="sticky top-0 z-40 border-b border-[#dcece3] bg-[#edf7f2]/90 backdrop-blur-xl">
+        <nav class="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-10">
+            <a href="#inicio" class="flex items-center gap-3">
+                <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-[#d7e7de]">
+                    <i data-lucide="shield-plus" class="h-5 w-5 text-[#0c7a43]"></i>
+                </div>
+                <div>
+                    <div class="text-lg font-bold text-[#123524]">Assist Care</div>
+                    <div class="text-xs text-[#688273]">Cuidado humano con respaldo digital</div>
+                </div>
+            </a>
+
+            <div class="hidden items-center gap-8 lg:flex">
+                <a href="#servicios" class="landing-nav-link text-sm font-medium text-[#4f675a] transition-colors hover:text-[#123524]">Servicios</a>
+                <a href="#impacto" class="landing-nav-link text-sm font-medium text-[#4f675a] transition-colors hover:text-[#123524]">Impacto</a>
+                <a href="#mision" class="landing-nav-link text-sm font-medium text-[#4f675a] transition-colors hover:text-[#123524]">Misión</a>
+                <a href="#comunidad" class="landing-nav-link text-sm font-medium text-[#4f675a] transition-colors hover:text-[#123524]">Comunidad</a>
+                <a href="#donaciones" class="landing-nav-link text-sm font-medium text-[#4f675a] transition-colors hover:text-[#123524]">Donaciones</a>
+            </div>
+
+            <div class="hidden items-center gap-3 sm:flex">
+                <a href="{% url 'login' %}" class="rounded-full border border-[#d7e7de] bg-white px-5 py-2.5 text-sm font-semibold text-[#163326] transition-colors hover:bg-[#f7fbf9]">
+                    Iniciar sesión
+                </a>
+                <a href="{% url 'registro' %}" class="rounded-full bg-[#0c7a43] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#0a6939]">
+                    Registrarse
+                </a>
+            </div>
+
+            <button
+                type="button"
+                onclick="toggleMenu()"
+                class="relative flex h-11 w-11 items-center justify-center rounded-full border border-[#d7e7de] bg-white text-[#143326] lg:hidden"
+                aria-label="Abrir menú"
+            >
+                <i id="menu-icon-open" data-lucide="menu" class="absolute h-5 w-5 transition-all duration-300"></i>
+                <i id="menu-icon-close" data-lucide="x" class="absolute h-5 w-5 scale-50 rotate-90 opacity-0 transition-all duration-300"></i>
+            </button>
+        </nav>
+    </header>
+
+    <div id="mobile-overlay" class="fixed inset-0 z-40 bg-[#143326]/30 opacity-0 pointer-events-none transition-opacity duration-300 lg:hidden" onclick="toggleMenu(false)"></div>
+    <aside id="mobile-drawer" class="fixed right-0 top-0 z-50 flex h-screen w-[85%] max-w-sm translate-x-full flex-col bg-white px-7 pb-8 pt-24 shadow-2xl transition-transform duration-300 lg:hidden">
+        <div class="flex flex-col gap-1">
+            <a href="#servicios" data-close-menu="true" class="landing-nav-link border-b border-[#e6f0eb] py-4 text-xl font-semibold text-[#143326] transition-colors">Servicios</a>
+            <a href="#impacto" data-close-menu="true" class="landing-nav-link border-b border-[#e6f0eb] py-4 text-xl font-semibold text-[#143326] transition-colors">Impacto</a>
+            <a href="#mision" data-close-menu="true" class="landing-nav-link border-b border-[#e6f0eb] py-4 text-xl font-semibold text-[#143326] transition-colors">Misión</a>
+            <a href="#comunidad" data-close-menu="true" class="landing-nav-link border-b border-[#e6f0eb] py-4 text-xl font-semibold text-[#143326] transition-colors">Comunidad</a>
+            <a href="#donaciones" data-close-menu="true" class="landing-nav-link border-b border-[#e6f0eb] py-4 text-xl font-semibold text-[#143326] transition-colors">Donaciones</a>
+        </div>
+        <div class="mt-8 flex flex-col gap-3">
+            <a href="{% url 'login' %}" class="rounded-full border border-[#d7e7de] bg-white px-5 py-3 text-center text-sm font-semibold text-[#163326]">
+                Iniciar sesión
+            </a>
+            <a href="{% url 'registro' %}" class="rounded-full bg-[#0c7a43] px-5 py-3 text-center text-sm font-semibold text-white">
+                Registrarse
+            </a>
+        </div>
+    </aside>
+
+    <main>
+        <section id="inicio" class="landing-section scroll-mt-20 relative min-h-[calc(100vh-76px)] overflow-hidden">
+            <div class="absolute inset-0">
+                <video
+                    id="boomerang-video"
+                    src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260511_131941_d136af49-e243-493a-be14-6ff3f24e09e6.mp4"
+                    class="h-full w-full object-cover"
+                    muted
+                    playsinline
+                    preload="auto"
+                    crossorigin="anonymous"
+                ></video>
+                <canvas id="boomerang-canvas" class="hidden h-full w-full object-cover"></canvas>
+                <div class="absolute inset-0 bg-[linear-gradient(90deg,rgba(237,247,242,0.82)_0%,rgba(237,247,242,0.62)_38%,rgba(237,247,242,0.18)_70%,rgba(237,247,242,0.06)_100%)]"></div>
+            </div>
+
+            <div class="relative z-10 mx-auto flex min-h-[calc(100vh-76px)] max-w-7xl items-center px-4 py-16 sm:px-6 lg:px-10">
+                <div class="max-w-2xl">
+                    <div class="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#6f8d7d]">Cuidar es un derecho</div>
+                    <h1 class="display-title mt-5 text-4xl font-extrabold leading-[0.94] text-[#153727] sm:text-5xl xl:text-6xl">
+                        Conectamos voluntariado y cuidado inclusivo
+                    </h1>
+                    <p class="mt-6 max-w-xl text-base leading-7 text-[#4f675a] sm:text-lg">
+                        Assist Care es una iniciativa sin ánimo de lucro que conecta personas en situación de vulnerabilidad con voluntarios verificados. Coordinamos acompañamiento, trazabilidad y soporte para que nadie enfrente solo un momento crítico.
+                    </p>
+
+                    <div class="mt-8 grid gap-3 text-sm text-[#486256] sm:grid-cols-2">
+                        <div class="flex items-center gap-2 rounded-full bg-white/88 px-4 py-3 shadow-sm ring-1 ring-[#ddece4] backdrop-blur-sm">
+                            <i data-lucide="shield-check" class="h-4 w-4 text-[#0c7a43]"></i>
+                            <span>Voluntariado verificado</span>
+                        </div>
+                        <div class="flex items-center gap-2 rounded-full bg-white/88 px-4 py-3 shadow-sm ring-1 ring-[#ddece4] backdrop-blur-sm">
+                            <i data-lucide="user-round-check" class="h-4 w-4 text-[#0c7a43]"></i>
+                            <span>Acompañamiento oportuno</span>
+                        </div>
+                        <div class="flex items-center gap-2 rounded-full bg-white/88 px-4 py-3 shadow-sm ring-1 ring-[#ddece4] backdrop-blur-sm">
+                            <i data-lucide="sparkles" class="h-4 w-4 text-[#0c7a43]"></i>
+                            <span>Nuestra red humana</span>
+                        </div>
+                        <div class="flex items-center gap-2 rounded-full bg-white/88 px-4 py-3 shadow-sm ring-1 ring-[#ddece4] backdrop-blur-sm">
+                            <i data-lucide="file-lock-2" class="h-4 w-4 text-[#0c7a43]"></i>
+                            <span>Protección de datos</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+                        <a href="{% url 'registro' %}" class="rounded-full bg-[#0c7a43] px-6 py-3.5 text-center text-sm font-semibold text-white transition-colors hover:bg-[#0a6939]">
+                            Sumarse como voluntario
+                        </a>
+                        <a href="#servicios" class="rounded-full border border-[#d7e7de] bg-white/92 px-6 py-3.5 text-center text-sm font-semibold text-[#153727] backdrop-blur-sm transition-colors hover:bg-white">
+                            Conocer nuestra labor
+                        </a>
+                        <a href="#donaciones" class="rounded-full border border-[#0c7a43]/30 bg-[#e7f6ed]/90 px-6 py-3.5 text-center text-sm font-semibold text-[#0a5a31] backdrop-blur-sm transition-colors hover:bg-[#e7f6ed]">
+                            Apoyar la causa
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pointer-events-none absolute bottom-6 left-1/2 z-10 hidden -translate-x-1/2 rounded-full bg-white/82 px-4 py-2 text-xs font-semibold text-[#153727] shadow-sm ring-1 ring-[#ddece4] backdrop-blur sm:flex">
+                Desliza para descubrir Assist Care
+            </div>
+        </section>
+
+        <section id="servicios" class="landing-section scroll-mt-24 py-20 sm:py-24">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10">
+                <div class="text-center">
+                    <div class="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#7a9386]">Nuestros servicios</div>
+                    <h2 class="mt-4 text-3xl font-extrabold text-[#153727] sm:text-4xl">Organización y verificación</h2>
+                    <p class="mx-auto mt-4 max-w-2xl text-sm leading-7 text-[#5a7366] sm:text-base">
+                        Optimizamos cada paso del proceso para que el cuidado se gestione con orden, visibilidad y confianza.
+                    </p>
+                </div>
+
+                <div class="mt-12 grid gap-5 md:grid-cols-3">
+                    <article class="rounded-[1.8rem] bg-[#dff1e6] p-6 shadow-sm ring-1 ring-[#d4e6dc]">
+                        <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[#0c7a43] shadow-sm">
+                            <i data-lucide="clipboard-list" class="h-5 w-5"></i>
+                        </div>
+                        <h3 class="mt-5 text-lg font-bold text-[#143326]">Gestión de solicitudes</h3>
+                        <p class="mt-3 text-sm leading-7 text-[#587264]">
+                            Organizamos las peticiones de asistencia con prioridad, contexto y seguimiento de inicio a fin.
+                        </p>
+                    </article>
+                    <article class="rounded-[1.8rem] bg-[#dff1e6] p-6 shadow-sm ring-1 ring-[#d4e6dc]">
+                        <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[#0c7a43] shadow-sm">
+                            <i data-lucide="badge-check" class="h-5 w-5"></i>
+                        </div>
+                        <h3 class="mt-5 text-lg font-bold text-[#143326]">Verificación de credenciales</h3>
+                        <p class="mt-3 text-sm leading-7 text-[#587264]">
+                            Validamos documentos, perfiles y trazas clave para reducir riesgos y elevar la confianza.
+                        </p>
+                    </article>
+                    <article class="rounded-[1.8rem] bg-[#dff1e6] p-6 shadow-sm ring-1 ring-[#d4e6dc]">
+                        <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[#0c7a43] shadow-sm">
+                            <i data-lucide="stethoscope" class="h-5 w-5"></i>
+                        </div>
+                        <h3 class="mt-5 text-lg font-bold text-[#143326]">Acompañamiento clínico</h3>
+                        <p class="mt-3 text-sm leading-7 text-[#587264]">
+                            Diseñamos una experiencia cálida para citas, traslados y procesos médicos esenciales.
+                        </p>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section id="impacto" class="landing-section scroll-mt-24 py-20 sm:py-24">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10">
+                <div class="text-center">
+                    <div class="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#7a9386]">Impacto</div>
+                    <h2 class="mt-4 text-3xl font-extrabold text-[#153727] sm:text-4xl">Impacto social, cuidado con dignidad</h2>
+                </div>
+
+                <div class="mt-12 grid gap-8 md:grid-cols-3">
+                    <article class="text-center">
+                        <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-[#b9dcc7] bg-[#eaf7ef] text-[#0c7a43]">
+                            <i data-lucide="shield-check" class="h-7 w-7"></i>
+                        </div>
+                        <h3 class="mt-5 text-lg font-bold text-[#143326]">Familiar</h3>
+                        <p class="mt-3 text-sm leading-7 text-[#5a7366]">
+                            “Sentimos respaldo y tranquilidad durante cada trayecto y cada momento sensible del proceso.”
+                        </p>
+                    </article>
+                    <article class="text-center">
+                        <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-[#b9dcc7] bg-[#eaf7ef] text-[#0c7a43]">
+                            <i data-lucide="smile-plus" class="h-7 w-7"></i>
+                        </div>
+                        <h3 class="mt-5 text-lg font-bold text-[#143326]">Usuario</h3>
+                        <p class="mt-3 text-sm leading-7 text-[#5a7366]">
+                            “El apoyo que me acompaña no solo me guía con mi cita, también me permite volver a sentirme seguro.”
+                        </p>
+                    </article>
+                    <article class="text-center">
+                        <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-[#b9dcc7] bg-[#eaf7ef] text-[#0c7a43]">
+                            <i data-lucide="building-2" class="h-7 w-7"></i>
+                        </div>
+                        <h3 class="mt-5 text-lg font-bold text-[#143326]">Impacto social</h3>
+                        <p class="mt-3 text-sm leading-7 text-[#5a7366]">
+                            “Una red confiable mejora la continuidad del cuidado y dignifica la experiencia completa.”
+                        </p>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section id="mision" class="landing-section scroll-mt-24 bg-[#0b7a43] py-20 text-white sm:py-24">
+            <div class="mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-10">
+                <div class="text-3xl font-light">∞</div>
+                <h2 class="mt-5 text-3xl font-extrabold leading-tight sm:text-4xl">Nuestra misión</h2>
+                <p class="mx-auto mt-7 max-w-3xl text-sm leading-8 text-white/88 sm:text-base">
+                    Humanizamos la salud desde la comunidad: conectamos voluntariado verificado con personas que requieren acompañamiento, y fortalecemos el tejido social con tecnología, trazabilidad y apoyo humano en cada paso.
+                </p>
+                <div class="mx-auto mt-8 max-w-3xl rounded-[1.6rem] border border-white/15 bg-white/10 px-5 py-6 backdrop-blur-sm sm:px-6">
+                    <p class="text-sm leading-8 text-white/92 sm:text-base">
+                        Nuestro enfoque es 100% social y sin ánimo de lucro: diseñamos una plataforma accesible e inclusiva para coordinar ayuda real, con estándares de seguridad y una experiencia clara para voluntarios, familias y organizaciones aliadas.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section id="comunidad" class="landing-section scroll-mt-24 py-20 sm:py-24">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10">
+                <div class="mx-auto max-w-3xl text-center">
+                    <h2 class="text-3xl font-extrabold leading-tight text-[#153727] sm:text-4xl">Amado por nuestra comunidad</h2>
+                    <p class="mt-4 text-sm leading-7 text-[#5a7366] sm:text-base">Acompañamiento que se siente cercano, útil y seguro.</p>
+                </div>
+
+                <div class="mt-10 grid items-start gap-6 sm:mt-12 lg:gap-8 xl:grid-cols-[minmax(0,0.92fr)_minmax(320px,1.08fr)]">
+                    <div class="grid gap-4 sm:gap-5">
+                        <div class="rounded-[1.6rem] bg-white p-5 shadow-sm ring-1 ring-[#dcece3] sm:p-6">
+                            <p class="text-sm leading-7 text-[#4f675a]">
+                                “La interfaz es muy intuitiva para mi abuelo. Ahora él mismo sabe qué persona lo acompañará en su cita.”
+                            </p>
+                            <div class="mt-4 flex items-center gap-3">
+                                <div class="flex h-10 w-10 items-center justify-center rounded-full bg-[#dff1e6] font-semibold text-[#0c7a43]">M</div>
+                                <div>
+                                    <p class="text-sm font-semibold text-[#143326]">Marcela J.</p>
+                                    <p class="text-xs text-[#799285]">Familiar</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="rounded-[1.6rem] bg-white p-5 shadow-sm ring-1 ring-[#dcece3] sm:p-6">
+                            <p class="text-sm leading-7 text-[#4f675a]">
+                                “Valoro que antes de aceptar un servicio pueda ver el estado de identidad y documentos del acompañante.”
+                            </p>
+                            <div class="mt-4 flex items-center gap-3">
+                                <div class="flex h-10 w-10 items-center justify-center rounded-full bg-[#dff1e6] font-semibold text-[#0c7a43]">D</div>
+                                <div>
+                                    <p class="text-sm font-semibold text-[#143326]">Daniel R.</p>
+                                    <p class="text-xs text-[#799285]">Usuario</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="rounded-[1.7rem] bg-[#e7f6ed] p-5 shadow-sm ring-1 ring-[#dcece3] sm:p-6">
+                            <div class="flex items-start justify-between gap-4">
+                                <div>
+                                    <p class="text-sm font-bold text-[#143326]">Confianza visible</p>
+                                    <p class="mt-2 text-sm leading-7 text-[#587264]">
+                                        Perfiles verificados, soporte urgente y claridad en cada servicio para una experiencia más humana.
+                                    </p>
+                                </div>
+                                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white text-[#0c7a43] shadow-sm">
+                                    <i data-lucide="badge-check" class="h-5 w-5"></i>
+                                </div>
+                            </div>
+                            <div class="mt-5 flex flex-wrap gap-2">
+                                <span class="rounded-full bg-white px-3 py-2 text-xs font-semibold text-[#143326] ring-1 ring-[#d7e7de]">Validación documental</span>
+                                <span class="rounded-full bg-white px-3 py-2 text-xs font-semibold text-[#143326] ring-1 ring-[#d7e7de]">Soporte institucional</span>
+                                <span class="rounded-full bg-white px-3 py-2 text-xs font-semibold text-[#143326] ring-1 ring-[#d7e7de]">Seguimiento del servicio</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="relative overflow-hidden rounded-[2rem] bg-white p-3 shadow-[0_24px_80px_rgba(16,68,44,0.12)] ring-1 ring-[#d8e8df]">
+                        <img
+                            src="{% static 'img/landing.jpeg' %}"
+                            alt="Acompañamiento clínico en Assist Care"
+                            class="h-full min-h-[320px] w-full rounded-[1.7rem] object-cover sm:min-h-[420px] lg:min-h-[520px]"
+                        >
+                        <div class="absolute inset-x-4 bottom-4 rounded-[1.4rem] bg-white/88 px-4 py-4 backdrop-blur-md ring-1 ring-white/85 sm:inset-x-7 sm:bottom-7 sm:px-5">
+                            <div class="flex items-center justify-between gap-3">
+                                <div>
+                                    <p class="text-sm font-bold text-[#143326]">Asistencia verificada</p>
+                                    <p class="mt-1 text-xs text-[#658073]">Seguimiento humano, documentación visible y soporte en tiempo real.</p>
+                                </div>
+                                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#e7f6ed] text-[#0c7a43] sm:h-12 sm:w-12">
+                                    <i data-lucide="messages-square" class="h-5 w-5"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="donaciones" class="landing-section scroll-mt-24 py-20 sm:py-24">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-10">
+                <div class="rounded-[2rem] bg-white p-6 shadow-sm ring-1 ring-[#dcece3] sm:p-10">
+                    <div class="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(280px,0.7fr)] lg:items-center">
+                        <div>
+                            <div class="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#7a9386]">Donaciones</div>
+                            <h2 class="mt-4 text-3xl font-extrabold leading-tight text-[#153727] sm:text-4xl">Apoya a Assist Care</h2>
+                            <p class="mt-5 max-w-2xl text-sm leading-7 text-[#5a7366] sm:text-base">
+                                Tu apoyo solidario sostiene un modelo de costo $0 para el paciente. Las contribuciones financian auxilios de movilidad y alimentación para enfermeros voluntarios, y mantienen la infraestructura del software que coordina cada acompañamiento.
+                            </p>
+                            <div class="mt-7">
+                                <div class="flex justify-center sm:justify-start">
+                                    <div class="w-full max-w-md rounded-[1.6rem] bg-[#f7fbf9] p-5 ring-1 ring-[#d7e7de] sm:p-6">
+                                        <div class="text-sm font-semibold text-[#143326]">Apoyar la causa</div>
+                                        <div class="mt-1 text-xs leading-6 text-[#5a7366]">
+                                            Haz una contribución solidaria segura para sostener horas de acompañamiento y la operación humanitaria de Assist Care.
+                                        </div>
+                                        <div class="mt-4 flex justify-center">
+                                            <form>
+                                                <script
+                                                    src="https://checkout.epayco.co/checkout.js"
+                                                    class="epayco-button"
+                                                    data-epayco-key="6c3a8da7905168a227a9488d79631ede"
+                                                    data-epayco-amount="155000"
+                                                    data-epayco-name="Apoyo solidario Assist Care"
+                                                    data-epayco-description="Contribución para sostener horas de acompañamiento voluntario"
+                                                    data-epayco-currency="cop"
+                                                    data-epayco-country="co"
+                                                    data-epayco-test="true"
+                                                    data-epayco-external="true"
+                                                    data-epayco-response="https://sulk-punctured-boned.ngrok-free.dev/epayco/webhook/"
+                                                    data-epayco-confirmation="https://sulk-punctured-boned.ngrok-free.dev/epayco/webhook/">
+                                                </script>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mt-4 flex">
+                                    <a href="#inicio" class="inline-flex items-center justify-center gap-2 rounded-full border border-[#d7e7de] bg-[#f7fbf9] px-6 py-3.5 text-sm font-semibold text-[#153727] transition-colors hover:bg-white">
+                                        Volver arriba
+                                        <i data-lucide="arrow-up" class="h-4 w-4"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="rounded-[1.6rem] bg-[#e7f6ed] p-6 ring-1 ring-[#dcece3] sm:p-7">
+                            <div class="flex items-start gap-4">
+                                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[#0c7a43] shadow-sm">
+                                    <i data-lucide="heart-handshake" class="h-5 w-5"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold text-[#143326]">Transparencia</p>
+                                    <p class="mt-2 text-sm leading-7 text-[#587264]">
+                                        Cada peso donado es una hora de cuidado para quien más lo necesita. Tu contribución se registra con comprobante y se valida desde el backend para mantener integridad, trazabilidad y rendición de cuentas.
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="mt-6 grid gap-3 text-sm text-[#4f675a]">
+                                <div class="flex items-center gap-2 rounded-2xl bg-white px-4 py-3 ring-1 ring-[#d7e7de]">
+                                    <i data-lucide="shield-check" class="h-4 w-4 text-[#0c7a43]"></i>
+                                    <span>Soporte y continuidad</span>
+                                </div>
+                                <div class="flex items-center gap-2 rounded-2xl bg-white px-4 py-3 ring-1 ring-[#d7e7de]">
+                                    <i data-lucide="badge-check" class="h-4 w-4 text-[#0c7a43]"></i>
+                                    <span>Mejoras de verificación</span>
+                                </div>
+                                <div class="flex items-center gap-2 rounded-2xl bg-white px-4 py-3 ring-1 ring-[#d7e7de]">
+                                    <i data-lucide="sparkles" class="h-4 w-4 text-[#0c7a43]"></i>
+                                    <span>Experiencia accesible</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="border-t border-[#dcece3] bg-[#edf7f2]">
+        <div class="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-10">
+            <div class="grid gap-10 md:grid-cols-2 xl:grid-cols-[minmax(0,1.4fr)_repeat(3,minmax(0,0.7fr))]">
+                <div>
+                    <div class="flex items-center gap-3">
+                        <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-[#d7e7de]">
+                            <i data-lucide="shield-plus" class="h-5 w-5 text-[#0c7a43]"></i>
+                        </div>
+                        <div>
+                            <div class="text-lg font-bold text-[#123524]">Assist Care</div>
+                            <div class="text-xs text-[#688273]">Conexión humana para cuidar mejor</div>
+                        </div>
+                    </div>
+                    <p class="mt-5 max-w-md text-sm leading-7 text-[#5a7366]">
+                        Diseñamos una experiencia segura para coordinar cuidado, validar acompañantes y reducir incertidumbre en procesos de salud y asistencia.
+                    </p>
+                </div>
+
+                <div>
+                    <h3 class="text-sm font-bold uppercase tracking-[0.18em] text-[#143326]">Explorar</h3>
+                    <div class="mt-4 space-y-3 text-sm text-[#5a7366]">
+                        <a href="#servicios" class="block hover:text-[#143326]">Servicios</a>
+                        <a href="#impacto" class="block hover:text-[#143326]">Impacto</a>
+                        <a href="#comunidad" class="block hover:text-[#143326]">Comunidad</a>
+                        <a href="#donaciones" class="block hover:text-[#143326]">Donaciones</a>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-sm font-bold uppercase tracking-[0.18em] text-[#143326]">Soporte</h3>
+                    <div class="mt-4 space-y-3 text-sm text-[#5a7366]">
+                        <a href="{% url 'login' %}" class="block hover:text-[#143326]">Panel</a>
+                        <a href="{% url 'registro' %}" class="block hover:text-[#143326]">Registro</a>
+                        <a href="mailto:assistcoresoporte@gmail.com" class="block hover:text-[#143326]">Ayuda</a>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-sm font-bold uppercase tracking-[0.18em] text-[#143326]">Legal</h3>
+                    <div class="mt-4 space-y-3 text-sm text-[#5a7366]">
+                        <a href="{% url 'privacidad' %}" class="block hover:text-[#143326]">Política de privacidad</a>
+                        <a href="{% url 'terminos' %}" class="block hover:text-[#143326]">Términos y condiciones</a>
+                        <a href="{% url 'cookies' %}" class="block hover:text-[#143326]">Política de cookies</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-12 flex flex-col gap-4 border-t border-[#dcece3] pt-6 text-xs text-[#6b8477] sm:flex-row sm:items-center sm:justify-between">
+                <p>© 2026 Assist Care. Todos los derechos reservados.</p>
+                <div class="flex items-center gap-4">
+                    <a href="#inicio" class="hover:text-[#143326]">Volver arriba</a>
+                    <span class="inline-flex items-center gap-2">
+                        <i data-lucide="instagram" class="h-4 w-4"></i>
+                        <i data-lucide="twitter" class="h-4 w-4"></i>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{% static 'js/home.js' %}"></script>
+</body>
+</html>

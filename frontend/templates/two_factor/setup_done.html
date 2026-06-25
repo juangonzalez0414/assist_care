@@ -1,0 +1,42 @@
+{% extends 'two_factor/_base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Verificación en dos pasos activada" %}{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        background-color: #ecfdf5; /* Light teal background */
+    }
+</style>
+
+<div class="pt-16 pb-24">
+    <div class="max-w-2xl mx-auto px-4">
+        <div class="bg-white rounded-[2.5rem] shadow-2xl p-10 md:p-14 text-center">
+            <!-- Success Icon -->
+            <div class="w-28 h-28 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-10">
+                <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#065f46" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+            </div>
+
+            <h1 class="text-[2rem] font-semibold text-gray-900 mb-6">
+                {% trans "¡Autenticación de Dos Factores Activada!" %}
+            </h1>
+
+            <p class="text-gray-600 mb-10 leading-relaxed text-lg max-w-lg mx-auto">
+                {% trans "Su cuenta ahora está protegida con una capa adicional de seguridad. Cada vez que inicie sesión, necesitará el código de su aplicación de autenticación." %}
+            </p>
+
+            <a href="{{ next_url|default:'/' }}" class="inline-flex items-center gap-3 bg-[#143f2c] hover:bg-[#0f2f21] text-white font-semibold py-4 px-12 rounded-xl shadow-xl shadow-emerald-900/30 transition-all text-lg">
+                {% trans "Continuar" %}
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

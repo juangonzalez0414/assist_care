@@ -1,0 +1,50 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    .custom-dashboard-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(79, 70, 229, 0.18);
+        border: 1px solid rgba(79, 70, 229, 0.45);
+        color: var(--body-fg);
+        text-decoration: none;
+        font-weight: 700;
+        margin-left: 6px;
+        white-space: nowrap;
+    }
+
+    .custom-dashboard-link:hover {
+        background: rgba(79, 70, 229, 0.28);
+        border-color: rgba(79, 70, 229, 0.65);
+        text-decoration: none;
+    }
+</style>
+{% endblock %}
+
+{% block userlinks %}
+    {% if site_url %}
+        <a href="{{ site_url }}">{% translate 'View site' %}</a> /
+        <a class="custom-dashboard-link" href="{% url 'dashboard_admin' %}">{% translate 'Ir a Verificación' %}</a> /
+    {% endif %}
+    {% if user.is_active and user.is_staff %}
+        {% url 'django-admindocs-docroot' as docsroot %}
+        {% if docsroot %}
+            <a href="{{ docsroot }}">{% translate 'Documentation' %}</a> /
+        {% endif %}
+    {% endif %}
+    {% if user.has_usable_password %}
+        <a href="{% url 'admin:password_change' %}">{% translate 'Change password' %}</a> /
+    {% endif %}
+    <form id="logout-form" method="post" action="{% url 'admin:logout' %}">
+        {% csrf_token %}
+        <button type="submit">{% translate 'Log out' %}</button>
+    </form>
+    {% include "admin/color_theme_toggle.html" %}
+{% endblock %}
+

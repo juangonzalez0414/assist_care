@@ -1,0 +1,995 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Registro - Assist</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    {% include 'includes/global_ui_assets.html' %}
+</head>
+<body class="font-sans">
+    {% if messages %}
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 4000,
+                    timerProgressBar: true,
+                    background: '#1f2937',
+                    color: '#ffffff',
+                    iconColor: '#ffffff',
+                });
+                {% for message in messages %}
+                    setTimeout(function () {
+                        toast.fire({
+                            icon: '{% if "error" in message.tags %}error{% elif "success" in message.tags %}success{% elif "warning" in message.tags %}warning{% else %}info{% endif %}',
+                            title: '{% if "error" in message.tags %}¡Atención!{% elif "success" in message.tags %}¡Éxito!{% else %}Aviso{% endif %}',
+                            text: '{{ message|escapejs }}',
+                        });
+                    }, {{ forloop.counter0 }} * 450);
+                {% endfor %}
+            });
+        </script>
+    {% endif %}
+
+    <div class="min-h-screen grid grid-cols-1 lg:grid-cols-12">
+        <aside class="bg-[#0b2f24] text-white p-12 hidden lg:flex flex-col justify-between relative overflow-hidden lg:col-span-5">
+            <div class="text-2xl font-semibold tracking-tight">Assist Care</div>
+            <div class="flex-1 flex items-center">
+                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/10 max-w-md">
+                    <div class="text-sm uppercase tracking-[0.18em] text-white/70 mb-2">Assist</div>
+                    <div class="text-3xl font-semibold leading-tight">El cuidado que transforma vidas</div>
+                    <div class="text-sm text-white/70 mt-3 leading-relaxed">
+                        Completa tu registro en tres pasos. Seguridad, confianza y acompañamiento real.
+                    </div>
+                    <div class="mt-5 flex items-center gap-3 text-white/80 text-sm" id="stepHint">
+                        <span class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-white/10 border border-white/10">1</span>
+                        <span>Comienza tu viaje</span>
+                    </div>
+                </div>
+            </div>
+            <div class="text-xs text-white/60">© {% now "Y" %} Assist. Seguridad y confianza en cada paso.</div>
+        </aside>
+
+        <main class="bg-[#f2faf7] flex flex-col justify-center items-center p-6 lg:p-16 lg:col-span-7">
+            <div class="w-full max-w-2xl">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-sm font-semibold text-gray-700">Paso <span id="stepNum">1</span> de 3</div>
+                        <div class="text-xs text-gray-500 mt-1">Completa tu información y documentos.</div>
+                    </div>
+                    <a href="{% url 'login' %}" class="text-sm text-[#006B3F] font-medium hover:underline">¿Ya tienes cuenta? Inicia sesión</a>
+                </div>
+                <div class="h-2 w-full bg-emerald-100 rounded-full mt-4 overflow-hidden">
+                    <div id="progressBar" class="h-full bg-[#006B3F] w-1/3 rounded-full transition-all duration-300"></div>
+                </div>
+
+                <form id="registroForm" method="POST" enctype="multipart/form-data" class="mt-8 bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-50/50 p-8">
+                    {% csrf_token %}
+                    <input type="hidden" id="webcam_photo" name="webcam_photo" value="" />
+
+                    <section id="step1">
+                        <div class="text-xl font-semibold text-gray-800">Comienza tu viaje</div>
+                        <div class="text-sm text-gray-500 mt-1">Información personal para crear tu perfil.</div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+                            <div>
+                                <label class="text-sm font-medium text-gray-700 mb-1.5 block" for="nombres">Nombres</label>
+                                <input id="nombres" name="nombres" type="text" required value="{{ form.nombres.value|default_if_none:'' }}"
+                                    class="w-full bg-[#e1f5ee] border border-emerald-100 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#006B3F]/20 focus:border-[#006B3F]" />
+                                {% if form.nombres.errors %}<div class="text-xs text-red-600 mt-2">{{ form.nombres.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium text-gray-700 mb-1.5 block" for="apellidos">Apellidos</label>
+                                <input id="apellidos" name="apellidos" type="text" required value="{{ form.apellidos.value|default_if_none:'' }}"
+                                    class="w-full bg-[#e1f5ee] border border-emerald-100 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#006B3F]/20 focus:border-[#006B3F]" />
+                                {% if form.apellidos.errors %}<div class="text-xs text-red-600 mt-2">{{ form.apellidos.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium text-gray-700 mb-1.5 block" for="cedula">Cédula</label>
+                                <input id="cedula" name="cedula" type="text" inputmode="numeric" pattern="[0-9]*" required value="{{ form.cedula.value|default_if_none:'' }}"
+                                    class="w-full bg-[#e1f5ee] border border-emerald-100 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#006B3F]/20 focus:border-[#006B3F]" />
+                                <div id="cedula-live-status" class="text-xs mt-2 {% if form.cedula.errors %}text-red-600{% else %}hidden{% endif %}">{% if form.cedula.errors %}{{ form.cedula.errors.0 }}{% endif %}</div>
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium text-gray-700 mb-1.5 block" for="ciudad">Ciudad</label>
+                                <select id="ciudad" name="ciudad" required
+                                    class="w-full bg-[#e1f5ee] border border-emerald-100 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#006B3F]/20 focus:border-[#006B3F]">
+                                    {% for group, options in form.ciudad.field.choices %}
+                                        <optgroup label="{{ group }}">
+                                            {% for v, label in options %}
+                                                <option value="{{ v }}" {% if form.ciudad.value == v %}selected{% endif %}>{{ label }}</option>
+                                            {% endfor %}
+                                        </optgroup>
+                                    {% endfor %}
+                                </select>
+                                {% if form.ciudad.errors %}<div class="text-xs text-red-600 mt-2">{{ form.ciudad.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium text-gray-700 mb-1.5 block" for="fecha_nacimiento">Fecha de nacimiento</label>
+                                <input id="fecha_nacimiento" name="fecha_nacimiento" type="date" required value="{{ form.fecha_nacimiento.value|default_if_none:'' }}"
+                                    class="w-full bg-[#e1f5ee] border border-emerald-100 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#006B3F]/20 focus:border-[#006B3F]" />
+                                {% if form.fecha_nacimiento.errors %}<div class="text-xs text-red-600 mt-2">{{ form.fecha_nacimiento.errors.0 }}</div>{% endif %}
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium text-gray-700 mb-1.5 block" for="sexo">Sexo</label>
+                                <select id="sexo" name="sexo" required
+                                    class="w-full bg-[#e1f5ee] border border-emerald-100 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#006B3F]/20 focus:border-[#006B3F]">
+                                    {% for v, label in form.sexo.field.choices %}
+                                        <option value="{{ v }}" {% if form.sexo.value == v %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                                {% if form.sexo.errors %}<div class="text-xs text-red-600 mt-2">{{ form.sexo.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end mt-8">
+                            <button type="button" id="next1" class="bg-[#006B3F] hover:bg-[#005230] text-white font-medium py-3 px-5 rounded-xl transition-all duration-200 shadow-sm">
+                                Siguiente →
+                            </button>
+                        </div>
+                    </section>
+
+                    <section id="step2" class="hidden">
+                        <div class="text-xl font-semibold text-gray-800">Verificación y perfil</div>
+                        <div class="text-sm text-gray-500 mt-1">Define tu rol y adjunta tus soportes.</div>
+
+                        <div class="mt-6">
+                            <label class="text-sm font-medium text-gray-700 mb-1.5 block" for="rol">¿Cómo deseas participar?</label>
+                            <select id="rol" name="rol" required
+                                class="w-full bg-[#e1f5ee] border border-emerald-100 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#006B3F]/20 focus:border-[#006B3F]">
+                                {% for v, label in form.rol.field.choices %}
+                                    <option value="{{ v }}" {% if form.rol.value == v %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                            {% if form.rol.errors %}<div class="text-xs text-red-600 mt-2">{{ form.rol.errors.0 }}</div>{% endif %}
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+                            <div>
+                                <div class="border-dashed border-2 border-emerald-500 rounded-xl bg-white p-6 text-center">
+                                    <div class="text-sm font-semibold text-gray-800">Cédula escaneada</div>
+                                    <div class="text-xs text-gray-500 mt-1">PDF o imagen</div>
+                                    <input id="cedula_documento" name="cedula_documento" type="file" accept="image/*,application/pdf" required class="mt-4 w-full text-sm text-gray-700 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-[#e1f5ee] file:text-gray-800 file:font-medium hover:file:bg-emerald-100" />
+                                    {% if form.cedula_documento.errors %}<div class="text-xs text-red-600 mt-2">{{ form.cedula_documento.errors.0 }}</div>{% endif %}
+                                </div>
+                            </div>
+
+                            <div>
+                                <div id="docSoporteBox" class="border-dashed border-2 border-emerald-500 rounded-xl bg-white p-6 text-center">
+                                    <div id="docSoporteTitle" class="text-sm font-semibold text-gray-800">Documento soporte</div>
+                                    <div id="docSoporteHint" class="text-xs text-gray-500 mt-1">Carga el certificado en PDF para validar tu perfil.</div>
+                                    <input id="url_certificado_discapacidad" name="url_certificado_discapacidad" type="file" accept=".pdf,application/pdf"
+                                        class="mt-4 w-full text-sm text-gray-700 file:mr-3 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:bg-[#006B3F] file:text-white file:font-medium hover:file:bg-[#005230]" />
+                                    <input id="url_tarjeta_profesional" name="url_tarjeta_profesional" type="file" accept=".pdf,application/pdf"
+                                        class="mt-4 w-full text-sm text-gray-700 file:mr-3 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:bg-[#006B3F] file:text-white file:font-medium hover:file:bg-[#005230] hidden" />
+                                    {% if form.url_certificado_discapacidad.errors %}<div class="text-xs text-red-600 mt-2">{{ form.url_certificado_discapacidad.errors.0 }}</div>{% endif %}
+                                    {% if form.url_tarjeta_profesional.errors %}<div class="text-xs text-red-600 mt-2">{{ form.url_tarjeta_profesional.errors.0 }}</div>{% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="telefonoBox" class="mt-4 hidden">
+                            <label class="text-sm font-medium text-gray-700 mb-1.5 block" for="telefono_whatsapp">Teléfono WhatsApp (Enfermero)</label>
+                            <div class="flex">
+                                <div class="px-4 py-3 bg-[#e1f5ee] border border-emerald-100 rounded-l-xl text-gray-700 font-medium">+57</div>
+                                <input id="telefono_whatsapp" name="telefono_whatsapp" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="10" value="{{ form.telefono_whatsapp.value|default_if_none:'' }}"
+                                    class="flex-1 bg-[#e1f5ee] border border-emerald-100 rounded-r-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#006B3F]/20 focus:border-[#006B3F]" placeholder="3001234567" />
+                            </div>
+                            {% if form.telefono_whatsapp.errors %}<div class="text-xs text-red-600 mt-2">{{ form.telefono_whatsapp.errors.0 }}</div>{% endif %}
+                        </div>
+
+                        <div class="mt-6">
+                            <label class="text-sm font-medium text-gray-700 mb-1.5 block" for="correo">Correo electrónico</label>
+                            <input id="correo" name="correo" type="email" required value="{{ form.correo.value|default_if_none:'' }}"
+                                class="w-full bg-[#e1f5ee] border border-emerald-100 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#006B3F]/20 focus:border-[#006B3F]" placeholder="ejemplo@correo.com" />
+                            <div id="correo-live-status" class="text-xs mt-2 {% if form.correo.errors %}text-red-600{% else %}hidden{% endif %}">{% if form.correo.errors %}{{ form.correo.errors.0 }}{% endif %}</div>
+                        </div>
+
+                        <div class="flex justify-between mt-8">
+                            <button type="button" id="back2" class="text-gray-700 font-medium py-3 px-5 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors">
+                                ← Volver
+                            </button>
+                            <button type="button" id="next2" class="bg-[#006B3F] hover:bg-[#005230] text-white font-medium py-3 px-5 rounded-xl transition-all duration-200 shadow-sm">
+                                Siguiente →
+                            </button>
+                        </div>
+                    </section>
+
+                    <section id="step3" class="hidden">
+                        <div class="text-xl font-semibold text-gray-800">Configuración de seguridad</div>
+                        <div class="text-sm text-gray-500 mt-1">Crea una contraseña robusta para proteger tu cuenta.</div>
+
+                        <div id="biometric-box" class="mt-6 bg-[#f2faf7] border border-emerald-100 rounded-2xl p-6 transition-all duration-500 ease-in-out">
+                            <div class="text-sm font-semibold text-gray-800 text-center">Validación biométrica por cámara</div>
+                            <div id="camera-status" class="text-xs text-gray-600 mt-2 text-center">Por favor, acerque su rostro al círculo para identificarse.</div>
+
+                            <div id="camera-container" class="relative w-64 h-64 mx-auto rounded-full overflow-hidden border-4 border-gray-300 mt-5">
+                                <video id="webcam" autoplay playsinline class="w-full h-full object-cover"></video>
+                                <canvas id="canvas" class="hidden"></canvas>
+                                <div class="absolute inset-0 pointer-events-none">
+                                    <div class="absolute inset-2 rounded-full border-4 border-white/40"></div>
+                                    <div class="absolute inset-0 rounded-full shadow-[inset_0_0_0_9999px_rgba(0,0,0,0)]"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+                            <div>
+                                <label class="text-sm font-medium text-gray-700 mb-1.5 block" for="password">Contraseña</label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                            <path d="M17 11V7a5 5 0 0 0-10 0v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                            <path d="M7 11h10v10H7V11Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                                        </svg>
+                                    </div>
+                                    <input id="password" name="password" type="password" required
+                                        class="w-full bg-[#e1f5ee] border border-emerald-100 rounded-xl pl-10 pr-10 py-3 focus:outline-none focus:ring-2 focus:ring-[#006B3F]/20 focus:border-[#006B3F]" placeholder="••••••••" />
+                                    <button type="button" id="togglePass1" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                                            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div id="passwordChecklist" class="mt-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 shadow-sm">
+                                    <div class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Tu contraseña debe incluir</div>
+                                    <ul class="mt-3 space-y-2.5 text-sm">
+                                        <li data-password-rule="length" class="flex items-center gap-2.5 text-slate-500 transition-colors duration-200">
+                                            <span data-password-rule-icon class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white border border-slate-200 text-slate-400 text-xs font-semibold shadow-sm">•</span>
+                                            <span data-password-rule-text>Mínimo 8 caracteres</span>
+                                        </li>
+                                        <li data-password-rule="uppercase" class="flex items-center gap-2.5 text-slate-500 transition-colors duration-200">
+                                            <span data-password-rule-icon class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white border border-slate-200 text-slate-400 text-xs font-semibold shadow-sm">•</span>
+                                            <span data-password-rule-text>Al menos una letra mayúscula</span>
+                                        </li>
+                                        <li data-password-rule="number" class="flex items-center gap-2.5 text-slate-500 transition-colors duration-200">
+                                            <span data-password-rule-icon class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white border border-slate-200 text-slate-400 text-xs font-semibold shadow-sm">•</span>
+                                            <span data-password-rule-text>Al menos un número</span>
+                                        </li>
+                                        <li data-password-rule="special" class="flex items-center gap-2.5 text-slate-500 transition-colors duration-200">
+                                            <span data-password-rule-icon class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white border border-slate-200 text-slate-400 text-xs font-semibold shadow-sm">•</span>
+                                            <span data-password-rule-text>Al menos un carácter especial</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                                {% if form.password.errors %}<div class="text-xs text-red-600 mt-2">{{ form.password.errors.0 }}</div>{% endif %}
+                            </div>
+
+                            <div>
+                                <label class="text-sm font-medium text-gray-700 mb-1.5 block" for="confirm_password">Confirmar contraseña</label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-500">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                            <path d="M17 11V7a5 5 0 0 0-10 0v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                            <path d="M7 11h10v10H7V11Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                                        </svg>
+                                    </div>
+                                    <input id="confirm_password" name="confirm_password" type="password" required
+                                        class="w-full bg-[#e1f5ee] border border-emerald-100 rounded-xl pl-10 pr-10 py-3 focus:outline-none focus:ring-2 focus:ring-[#006B3F]/20 focus:border-[#006B3F]" placeholder="••••••••" />
+                                    <button type="button" id="togglePass2" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                                            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/>
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div id="confirmPasswordStatus" class="mt-3 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 shadow-sm">
+                                    <div class="flex items-center gap-2.5 text-sm text-slate-500 transition-colors duration-200" id="confirmPasswordStatusRow">
+                                        <span id="confirmPasswordStatusIcon" class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white border border-slate-200 text-slate-400 text-xs font-semibold shadow-sm">•</span>
+                                        <span id="confirmPasswordStatusText">Las contraseñas deben coincidir para continuar</span>
+                                    </div>
+                                </div>
+                                {% if form.confirm_password.errors %}<div class="text-xs text-red-600 mt-2">{{ form.confirm_password.errors.0 }}</div>{% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mt-6 bg-emerald-50 border border-emerald-100 rounded-2xl p-5 flex gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-[#006B3F] flex items-center justify-center text-white flex-shrink-0" aria-hidden="true">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                                    <path d="M12 2l8 4v6c0 5-3.5 9.5-8 10-4.5-.5-8-5-8-10V6l8-4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                                    <path d="m9 12 2 2 4-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <div class="font-semibold text-gray-800">Tus datos están seguros</div>
+                                <div class="text-sm text-gray-600 mt-1 leading-relaxed">
+                                    Utilizamos prácticas de seguridad modernas para proteger tu información y evitar accesos no autorizados.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-between mt-8">
+                            <button type="button" id="back3" class="text-gray-700 font-medium py-3 px-5 rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors">
+                                ← Volver
+                            </button>
+                            <button type="submit" id="btn-finalizar" disabled class="bg-[#006B3F] hover:bg-[#005230] text-white font-medium py-3 px-5 rounded-xl transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#006B3F] disabled:shadow-none">
+                                Finalizar registro →
+                            </button>
+                        </div>
+                    </section>
+
+                    {% if form.non_field_errors %}
+                        <div class="mt-6 text-sm text-red-600">{{ form.non_field_errors.0 }}</div>
+                    {% endif %}
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        (function () {
+            const steps = [
+                document.getElementById('step1'),
+                document.getElementById('step2'),
+                document.getElementById('step3'),
+            ];
+            const stepNum = document.getElementById('stepNum');
+            const progressBar = document.getElementById('progressBar');
+            const stepHint = document.getElementById('stepHint');
+            const rol = document.getElementById('rol');
+            const telefonoBox = document.getElementById('telefonoBox');
+            const telefonoInput = document.getElementById('telefono_whatsapp');
+            const certInput = document.getElementById('url_certificado_discapacidad');
+            const tarjetaInput = document.getElementById('url_tarjeta_profesional');
+            const docTitle = document.getElementById('docSoporteTitle');
+            const docHint = document.getElementById('docSoporteHint');
+            const webcamVideo = document.getElementById('webcam');
+            const webcamCanvas = document.getElementById('canvas');
+            const cameraContainer = document.getElementById('camera-container');
+            const cameraStatus = document.getElementById('camera-status');
+            const biometricBox = document.getElementById('biometric-box');
+            const webcamInput = document.getElementById('webcam_photo');
+            const registroForm = document.getElementById('registroForm');
+            const cedulaInput = document.getElementById('cedula');
+            const correoInput = document.getElementById('correo');
+            const cedulaStatus = document.getElementById('cedula-live-status');
+            const correoStatus = document.getElementById('correo-live-status');
+            const passwordInput = document.getElementById('password');
+            const confirmPasswordInput = document.getElementById('confirm_password');
+            const passwordRuleEls = Array.from(document.querySelectorAll('[data-password-rule]'));
+            const confirmPasswordStatusRow = document.getElementById('confirmPasswordStatusRow');
+            const confirmPasswordStatusIcon = document.getElementById('confirmPasswordStatusIcon');
+            const confirmPasswordStatusText = document.getElementById('confirmPasswordStatusText');
+            const finalizarBtn = document.getElementById('btn-finalizar');
+            const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]')?.value || '';
+            const availabilityUrl = '{% url "registro_disponibilidad" %}';
+
+            let current = 0;
+            let stream = null;
+            let faceValidated = false;
+            let passwordRulesValid = false;
+            let passwordsMatch = false;
+            let biometricLoopId = null;
+            let stableStart = null;
+            let biometricActive = false;
+            let lastDetectAt = 0;
+            let lastServerCheckAt = 0;
+
+            const passwordRules = {
+                length: (value) => value.length >= 8,
+                uppercase: (value) => /[A-Z]/.test(value),
+                number: (value) => /\d/.test(value),
+                special: (value) => /[^A-Za-z0-9]/.test(value),
+            };
+            const emailRegex = /^[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}(?:\.[A-Za-z]{2,})?$/;
+            const cedulaRegex = /^\d{5,20}$/;
+            const availabilityState = {
+                cedula: {
+                    input: cedulaInput,
+                    status: cedulaStatus,
+                    exists: false,
+                    checking: false,
+                    requestId: 0,
+                    debounceId: null,
+                    normalize: (value) => String(value || '').replace(/\D/g, '').trim(),
+                    isValid: (value) => cedulaRegex.test(value),
+                    invalidMessage: 'La cédula debe contener solo números y tener entre 5 y 20 dígitos.',
+                    unavailableMessage: 'Ya existe una cuenta con esta cédula.',
+                    availableMessage: 'Cédula disponible para registro.',
+                    checkingMessage: 'Verificando cédula...',
+                    networkMessage: 'No pudimos validar la cédula en este momento. Intenta de nuevo.',
+                },
+                correo: {
+                    input: correoInput,
+                    status: correoStatus,
+                    exists: false,
+                    checking: false,
+                    requestId: 0,
+                    debounceId: null,
+                    normalize: (value) => String(value || '').trim(),
+                    isValid: (value) => emailRegex.test(value),
+                    invalidMessage: 'Ingresa un correo electrónico válido.',
+                    unavailableMessage: 'Ya existe una cuenta con este correo.',
+                    availableMessage: 'Correo disponible para registro.',
+                    checkingMessage: 'Verificando correo...',
+                    networkMessage: 'No pudimos validar el correo en este momento. Intenta de nuevo.',
+                },
+            };
+
+            function renderAvailabilityStatus(statusEl, mode, message) {
+                if (!statusEl) return;
+                statusEl.classList.remove('hidden', 'text-red-600', 'text-emerald-600', 'text-amber-600', 'text-slate-500');
+                if (!message) {
+                    statusEl.textContent = '';
+                    statusEl.classList.add('hidden');
+                    return;
+                }
+                statusEl.textContent = message;
+                if (mode === 'error') {
+                    statusEl.classList.add('text-red-600');
+                } else if (mode === 'success') {
+                    statusEl.classList.add('text-emerald-600');
+                } else if (mode === 'checking') {
+                    statusEl.classList.add('text-amber-600');
+                } else {
+                    statusEl.classList.add('text-slate-500');
+                }
+            }
+
+            function resetAvailabilityField(fieldName) {
+                const config = availabilityState[fieldName];
+                if (!config || !config.input) return;
+                clearTimeout(config.debounceId);
+                config.checking = false;
+                config.exists = false;
+                config.input.setCustomValidity('');
+                renderAvailabilityStatus(config.status, 'neutral', '');
+            }
+
+            async function executeAvailabilityCheck(fieldName, value, requestId) {
+                const config = availabilityState[fieldName];
+                if (!config || !config.input) return;
+
+                try {
+                    const url = new URL(availabilityUrl, window.location.origin);
+                    url.searchParams.set(fieldName, value);
+                    const response = await fetch(url.toString(), {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                    });
+                    const payload = await response.json().catch(() => ({}));
+                    if (!response.ok) {
+                        throw new Error();
+                    }
+                    if (requestId !== config.requestId) return;
+                    if (config.normalize(config.input.value) !== value) return;
+
+                    config.checking = false;
+                    config.exists = Boolean(payload?.[fieldName]?.exists);
+                    if (config.exists) {
+                        config.input.setCustomValidity(payload?.[fieldName]?.message || config.unavailableMessage);
+                        renderAvailabilityStatus(config.status, 'error', payload?.[fieldName]?.message || config.unavailableMessage);
+                    } else {
+                        config.input.setCustomValidity('');
+                        renderAvailabilityStatus(config.status, 'success', payload?.[fieldName]?.message || config.availableMessage);
+                    }
+                } catch (error) {
+                    if (requestId !== config.requestId) return;
+                    config.checking = false;
+                    config.exists = false;
+                    config.input.setCustomValidity(config.networkMessage);
+                    renderAvailabilityStatus(config.status, 'error', config.networkMessage);
+                }
+
+                setFinalizarEnabled();
+            }
+
+            function scheduleAvailabilityCheck(fieldName, { immediate = false } = {}) {
+                const config = availabilityState[fieldName];
+                if (!config || !config.input) return;
+
+                clearTimeout(config.debounceId);
+
+                const normalizedValue = config.normalize(config.input.value);
+                if (config.input.value !== normalizedValue) {
+                    config.input.value = normalizedValue;
+                }
+
+                config.requestId += 1;
+                const currentRequestId = config.requestId;
+
+                if (!normalizedValue) {
+                    resetAvailabilityField(fieldName);
+                    setFinalizarEnabled();
+                    return;
+                }
+
+                if (!config.isValid(normalizedValue)) {
+                    config.checking = false;
+                    config.exists = false;
+                    config.input.setCustomValidity(config.invalidMessage);
+                    renderAvailabilityStatus(config.status, 'error', config.invalidMessage);
+                    setFinalizarEnabled();
+                    return;
+                }
+
+                config.checking = true;
+                config.exists = false;
+                config.input.setCustomValidity(config.checkingMessage);
+                renderAvailabilityStatus(config.status, 'checking', config.checkingMessage);
+                setFinalizarEnabled();
+
+                config.debounceId = setTimeout(() => {
+                    executeAvailabilityCheck(fieldName, normalizedValue, currentRequestId);
+                }, immediate ? 0 : 320);
+            }
+
+            function showStep(index) {
+                steps.forEach((s, i) => s.classList.toggle('hidden', i !== index));
+                current = index;
+                stepNum.textContent = String(index + 1);
+                progressBar.classList.remove('w-1/3', 'w-2/3', 'w-full');
+                progressBar.classList.add(index === 0 ? 'w-1/3' : index === 1 ? 'w-2/3' : 'w-full');
+                if (stepHint) {
+                    const label = index === 0 ? 'Comienza tu viaje' : index === 1 ? 'Verificación y perfil' : 'Seguridad y cuenta';
+                    stepHint.innerHTML = `<span class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-white/10 border border-white/10">${index + 1}</span><span>${label}</span>`;
+                }
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+
+                if (index === 2) {
+                    startBiometricIfNeeded();
+                } else {
+                    stopBiometric();
+                }
+            }
+
+            function setFinalizarEnabled() {
+                if (!finalizarBtn) return;
+                const availabilityBlocked = Object.values(availabilityState).some((field) => field.checking || field.exists);
+                const enabled = Boolean(
+                    faceValidated
+                    && passwordRulesValid
+                    && passwordsMatch
+                    && registroForm
+                    && registroForm.checkValidity()
+                    && !availabilityBlocked
+                );
+                finalizarBtn.disabled = !enabled;
+                finalizarBtn.classList.toggle('opacity-100', enabled);
+                finalizarBtn.classList.toggle('translate-y-0', enabled);
+            }
+
+            function getPasswordRuleState() {
+                const value = passwordInput ? passwordInput.value : '';
+                return {
+                    length: passwordRules.length(value),
+                    uppercase: passwordRules.uppercase(value),
+                    number: passwordRules.number(value),
+                    special: passwordRules.special(value),
+                };
+            }
+
+            function syncPasswordConfirmation() {
+                if (!passwordInput || !confirmPasswordInput) return true;
+                const confirmValue = confirmPasswordInput.value;
+                passwordsMatch = confirmValue.length > 0 && confirmValue === passwordInput.value;
+                const neutral = confirmValue.length === 0;
+
+                confirmPasswordInput.setCustomValidity(neutral || passwordsMatch ? '' : 'Las contraseñas no coinciden.');
+
+                if (confirmPasswordStatusRow && confirmPasswordStatusIcon && confirmPasswordStatusText) {
+                    confirmPasswordStatusRow.classList.toggle('text-emerald-600', passwordsMatch);
+                    confirmPasswordStatusRow.classList.toggle('font-medium', passwordsMatch);
+                    confirmPasswordStatusRow.classList.toggle('text-slate-500', !passwordsMatch);
+
+                    confirmPasswordStatusIcon.textContent = passwordsMatch ? '✓' : '•';
+                    confirmPasswordStatusIcon.classList.toggle('text-emerald-600', passwordsMatch);
+                    confirmPasswordStatusIcon.classList.toggle('border-emerald-200', passwordsMatch);
+                    confirmPasswordStatusIcon.classList.toggle('bg-emerald-50', passwordsMatch);
+                    confirmPasswordStatusIcon.classList.toggle('text-slate-400', !passwordsMatch);
+                    confirmPasswordStatusIcon.classList.toggle('border-slate-200', !passwordsMatch);
+                    confirmPasswordStatusIcon.classList.toggle('bg-white', !passwordsMatch);
+
+                    if (neutral) {
+                        confirmPasswordStatusText.textContent = 'Las contraseñas deben coincidir para continuar';
+                    } else if (passwordsMatch) {
+                        confirmPasswordStatusText.textContent = 'Las contraseñas coinciden correctamente';
+                    } else {
+                        confirmPasswordStatusText.textContent = 'Las contraseñas no coinciden todavía';
+                    }
+                }
+
+                setFinalizarEnabled();
+                return passwordsMatch;
+            }
+
+            function renderPasswordChecklist() {
+                const ruleState = getPasswordRuleState();
+                passwordRulesValid = Object.values(ruleState).every(Boolean);
+
+                passwordRuleEls.forEach((item) => {
+                    const ruleName = item.getAttribute('data-password-rule');
+                    const isValid = Boolean(ruleState[ruleName]);
+                    const icon = item.querySelector('[data-password-rule-icon]');
+                    const text = item.querySelector('[data-password-rule-text]');
+
+                    item.classList.toggle('text-emerald-600', isValid);
+                    item.classList.toggle('font-medium', isValid);
+                    item.classList.toggle('text-slate-500', !isValid);
+
+                    if (icon) {
+                        icon.textContent = isValid ? '✓' : '•';
+                        icon.classList.toggle('text-emerald-600', isValid);
+                        icon.classList.toggle('border-emerald-200', isValid);
+                        icon.classList.toggle('bg-emerald-50', isValid);
+                        icon.classList.toggle('text-slate-400', !isValid);
+                        icon.classList.toggle('border-slate-200', !isValid);
+                        icon.classList.toggle('bg-white', !isValid);
+                    }
+
+                    if (text) {
+                        text.classList.toggle('text-emerald-600', isValid);
+                        text.classList.toggle('font-medium', isValid);
+                        text.classList.toggle('text-slate-500', !isValid);
+                    }
+                });
+
+                syncPasswordConfirmation();
+                setFinalizarEnabled();
+            }
+
+            function validateStep(index) {
+                const el = steps[index];
+                if (!el) return true;
+                const inputs = Array.from(el.querySelectorAll('input, select, textarea')).filter((i) => !i.disabled && i.offsetParent !== null);
+                for (const i of inputs) {
+                    if (!i.checkValidity()) {
+                        i.reportValidity();
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            function applyRolUI() {
+                const value = (rol ? rol.value : '').trim();
+                const isEnfermero = value === 'enfermero';
+                if (telefonoBox) telefonoBox.classList.toggle('hidden', !isEnfermero);
+                if (telefonoInput) telefonoInput.required = isEnfermero;
+                if (certInput) certInput.classList.toggle('hidden', isEnfermero);
+                if (tarjetaInput) tarjetaInput.classList.toggle('hidden', !isEnfermero);
+                if (certInput) certInput.required = !isEnfermero;
+                if (tarjetaInput) tarjetaInput.required = isEnfermero;
+                if (docTitle) docTitle.textContent = isEnfermero ? 'Tarjeta profesional (PDF)' : 'Certificado de discapacidad';
+                if (docHint) docHint.textContent = isEnfermero ? 'Carga tu tarjeta profesional en PDF para validar tu perfil de enfermero.' : 'Carga el certificado en PDF para validar tu perfil.';
+            }
+
+            const next1 = document.getElementById('next1');
+            const next2 = document.getElementById('next2');
+            const back2 = document.getElementById('back2');
+            const back3 = document.getElementById('back3');
+
+            if (next1) next1.addEventListener('click', () => { if (validateStep(0)) showStep(1); });
+            if (next2) next2.addEventListener('click', () => { applyRolUI(); if (validateStep(1)) showStep(2); });
+            if (back2) back2.addEventListener('click', () => showStep(0));
+            if (back3) back3.addEventListener('click', () => showStep(1));
+
+            if (rol) rol.addEventListener('change', applyRolUI);
+            applyRolUI();
+
+            if (cedulaInput) {
+                cedulaInput.addEventListener('input', () => scheduleAvailabilityCheck('cedula'));
+                cedulaInput.addEventListener('blur', () => scheduleAvailabilityCheck('cedula', { immediate: true }));
+            }
+            if (correoInput) {
+                correoInput.addEventListener('input', () => scheduleAvailabilityCheck('correo'));
+                correoInput.addEventListener('blur', () => scheduleAvailabilityCheck('correo', { immediate: true }));
+            }
+
+            function togglePass(btnId, inputId) {
+                const btn = document.getElementById(btnId);
+                const input = document.getElementById(inputId);
+                if (!btn || !input) return;
+                btn.addEventListener('click', () => { input.type = input.type === 'password' ? 'text' : 'password'; });
+            }
+            togglePass('togglePass1', 'password');
+            togglePass('togglePass2', 'confirm_password');
+
+            if (passwordInput) passwordInput.addEventListener('input', renderPasswordChecklist);
+            if (confirmPasswordInput) {
+                confirmPasswordInput.addEventListener('input', () => {
+                    syncPasswordConfirmation();
+                });
+            }
+
+            if (registroForm) {
+                registroForm.addEventListener('submit', (event) => {
+                    renderPasswordChecklist();
+                    const passwordsMatch = syncPasswordConfirmation();
+                    if (!passwordRulesValid) {
+                        event.preventDefault();
+                        if (passwordInput) {
+                            passwordInput.focus();
+                            passwordInput.reportValidity();
+                        }
+                        return;
+                    }
+                    if (!passwordsMatch) {
+                        event.preventDefault();
+                        if (confirmPasswordInput) {
+                            confirmPasswordInput.focus();
+                            confirmPasswordInput.reportValidity();
+                        }
+                        return;
+                    }
+                    if (Object.values(availabilityState).some((field) => field.checking || field.exists || !field.input.checkValidity())) {
+                        event.preventDefault();
+                        if (cedulaInput && !cedulaInput.checkValidity()) {
+                            cedulaInput.focus();
+                            cedulaInput.reportValidity();
+                            return;
+                        }
+                        if (correoInput && !correoInput.checkValidity()) {
+                            correoInput.focus();
+                            correoInput.reportValidity();
+                        }
+                    }
+                });
+            }
+
+            if (location.hash === '#paso2') showStep(1);
+            if (location.hash === '#paso3') showStep(2);
+
+            renderPasswordChecklist();
+            scheduleAvailabilityCheck('cedula', { immediate: true });
+            scheduleAvailabilityCheck('correo', { immediate: true });
+            setFinalizarEnabled();
+
+            async function startWebcam() {
+                if (!webcamVideo) return;
+                stream = await navigator.mediaDevices.getUserMedia({ video: { width: 300, height: 300, facingMode: 'user' }, audio: false });
+                webcamVideo.srcObject = stream;
+            }
+
+            function stopWebcam() {
+                if (stream) {
+                    stream.getTracks().forEach((t) => t.stop());
+                }
+                stream = null;
+                if (webcamVideo) {
+                    webcamVideo.srcObject = null;
+                }
+            }
+
+            async function validateFaceOnServer(imageDataUrl) {
+                const res = await fetch(window.location.href, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken,
+                    },
+                    body: JSON.stringify({ action: 'validate_face', image: imageDataUrl }),
+                });
+                const payload = await res.json().catch(() => ({}));
+                if (!res.ok || !payload.ok) {
+                    throw new Error(payload.error || 'No se pudo validar el rostro.');
+                }
+                return true;
+            }
+
+            function captureFrame() {
+                if (!webcamVideo || !webcamCanvas) return;
+                const w = webcamVideo.videoWidth || 300;
+                const h = webcamVideo.videoHeight || 300;
+                webcamCanvas.width = w;
+                webcamCanvas.height = h;
+                const ctx = webcamCanvas.getContext('2d');
+                if (!ctx) return;
+                ctx.drawImage(webcamVideo, 0, 0, w, h);
+                const dataUrl = webcamCanvas.toDataURL('image/jpeg', 0.92);
+                return dataUrl;
+            }
+
+            function setContainerVerified() {
+                if (cameraContainer) {
+                    cameraContainer.classList.remove('border-gray-300');
+                    cameraContainer.classList.add('border-emerald-500');
+                }
+                if (cameraStatus) cameraStatus.textContent = '¡Rostro verificado con éxito!';
+
+                setTimeout(() => {
+                    if (biometricBox) {
+                        biometricBox.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
+                        setTimeout(() => biometricBox.classList.add('hidden'), 520);
+                    }
+
+                    const passwordInput = document.getElementById('password');
+                    if (passwordInput) {
+                        passwordInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        setTimeout(() => passwordInput.focus(), 150);
+                    }
+                }, 1200);
+            }
+
+            function setContainerPending(text) {
+                if (cameraContainer) {
+                    cameraContainer.classList.remove('border-emerald-500');
+                    cameraContainer.classList.add('border-gray-300');
+                }
+                if (cameraStatus) cameraStatus.textContent = text || 'Por favor, acerque su rostro al círculo para identificarse.';
+            }
+
+            function faceMeetsConstraints(faceBox, containerSize) {
+                const cw = containerSize;
+                const ch = containerSize;
+                const radius = cw / 2;
+                const circleArea = Math.PI * radius * radius;
+
+                const boxArea = faceBox.w * faceBox.h;
+                const minAreaOk = boxArea >= 0.5 * circleArea;
+
+                const cx = faceBox.x + faceBox.w / 2;
+                const cy = faceBox.y + faceBox.h / 2;
+                const dx = cx - cw / 2;
+                const dy = cy - ch / 2;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const centerOk = dist <= radius * 0.18;
+
+                return minAreaOk && centerOk;
+            }
+
+            async function biometricTick(detector) {
+                if (!webcamVideo || !cameraContainer) return;
+                if (webcamVideo.readyState < 2) return;
+                const nowDetect = performance.now();
+                if (nowDetect - lastDetectAt < 140) return;
+                lastDetectAt = nowDetect;
+
+                const faces = await detector.detect(webcamVideo);
+                if (!faces || faces.length === 0) {
+                    stableStart = null;
+                    setFinalizarEnabled(false);
+                    setContainerPending('No se detecta rostro. Ajusta iluminación y mira al centro.');
+                    return;
+                }
+
+                const box = faces[0].boundingBox;
+                const cw = cameraContainer.clientWidth || 256;
+                const ch = cameraContainer.clientHeight || 256;
+                const vw = webcamVideo.videoWidth || 300;
+                const vh = webcamVideo.videoHeight || 300;
+                const scale = Math.max(cw / vw, ch / vh);
+                const displayW = vw * scale;
+                const displayH = vh * scale;
+                const offsetX = (displayW - cw) / 2;
+                const offsetY = (displayH - ch) / 2;
+
+                const faceBox = {
+                    x: (box.x * scale) - offsetX,
+                    y: (box.y * scale) - offsetY,
+                    w: box.width * scale,
+                    h: box.height * scale,
+                };
+
+                const ok = faceMeetsConstraints(faceBox, cw);
+                if (!ok) {
+                    stableStart = null;
+                    setFinalizarEnabled(false);
+                    setContainerPending('Acérquese y centre el rostro dentro del círculo.');
+                    return;
+                }
+
+                const now = performance.now();
+                if (!stableStart) stableStart = now;
+                const elapsed = now - stableStart;
+                const remaining = Math.max(0, 1500 - elapsed);
+                if (remaining > 0) {
+                    setFinalizarEnabled(false);
+                    setContainerPending(`Mantén el rostro centrado... ${(remaining / 1000).toFixed(1)}s`);
+                    return;
+                }
+
+                const dataUrl = captureFrame();
+                if (!dataUrl) {
+                    stableStart = null;
+                    setFinalizarEnabled(false);
+                    setContainerPending('No se pudo capturar la imagen. Intenta de nuevo.');
+                    return;
+                }
+
+                setContainerPending('Validando rostro...');
+                await validateFaceOnServer(dataUrl);
+                if (webcamInput) webcamInput.value = dataUrl;
+                faceValidated = true;
+                setFinalizarEnabled(true);
+                setContainerVerified();
+                stopBiometric();
+            }
+
+            async function biometricTickServerOnly() {
+                const now = performance.now();
+                if (now - lastServerCheckAt < 850) return;
+                lastServerCheckAt = now;
+                const dataUrl = captureFrame();
+                if (!dataUrl) return;
+                try {
+                    await validateFaceOnServer(dataUrl);
+                    if (!stableStart) stableStart = performance.now();
+                    const elapsed = performance.now() - stableStart;
+                    if (elapsed < 1500) {
+                        setFinalizarEnabled(false);
+                        setContainerPending(`Mantén el rostro visible... ${((1500 - elapsed) / 1000).toFixed(1)}s`);
+                        return;
+                    }
+                    if (webcamInput) webcamInput.value = dataUrl;
+                    faceValidated = true;
+                    setFinalizarEnabled(true);
+                    setContainerVerified();
+                    stopBiometric();
+                } catch (e) {
+                    stableStart = null;
+                    setFinalizarEnabled(false);
+                    setContainerPending(e && e.message ? e.message : 'No se detecta rostro.');
+                }
+            }
+
+            function stopBiometricLoop() {
+                if (biometricLoopId) {
+                    cancelAnimationFrame(biometricLoopId);
+                }
+                biometricLoopId = null;
+            }
+
+            async function startBiometricIfNeeded() {
+                if (faceValidated || biometricActive) return;
+                if (!webcamVideo || !cameraContainer) return;
+
+                biometricActive = true;
+                stableStart = null;
+                setFinalizarEnabled(false);
+                setContainerPending('Activando cámara...');
+
+                try {
+                    await startWebcam();
+                } catch (e) {
+                    biometricActive = false;
+                    setFinalizarEnabled(false);
+                    setContainerPending('Permiso de cámara denegado. Debes habilitar la cámara para registrarte.');
+                    return;
+                }
+
+                if ('FaceDetector' in window) {
+                    const detector = new FaceDetector({ fastMode: true, maxDetectedFaces: 1 });
+                    const loop = async () => {
+                        if (!biometricActive) return;
+                        try {
+                            await biometricTick(detector);
+                        } catch (e) {
+                            stableStart = null;
+                            setFinalizarEnabled(false);
+                            setContainerPending('No se pudo procesar la cámara. Intenta de nuevo.');
+                        }
+                        biometricLoopId = requestAnimationFrame(loop);
+                    };
+                    biometricLoopId = requestAnimationFrame(loop);
+                } else {
+                    if (cameraStatus) cameraStatus.textContent = 'Tu navegador no soporta detección local. Validando en servidor...';
+                    const loop = async () => {
+                        if (!biometricActive) return;
+                        await biometricTickServerOnly();
+                        biometricLoopId = requestAnimationFrame(loop);
+                    };
+                    biometricLoopId = requestAnimationFrame(loop);
+                }
+            }
+
+            function stopBiometric() {
+                biometricActive = false;
+                stableStart = null;
+                stopBiometricLoop();
+                stopWebcam();
+            }
+
+            window.addEventListener('beforeunload', stopWebcam);
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,2877 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Assist Care · Ajustes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .ax-scrollbar::-webkit-scrollbar { width: 10px; height: 10px; }
+        .ax-scrollbar::-webkit-scrollbar-thumb { background: rgba(17, 24, 39, 0.15); border-radius: 999px; }
+        .ax-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar { width: 10px; height: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(15, 23, 42, 0.18); border-radius: 999px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 240ms ease-out both; }
+        @keyframes bounceShort {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+        .animate-bounce-short { animation: bounceShort 560ms ease-in-out both; }
+        body.alto-contraste { background-color: #ffffff !important; }
+        body.alto-contraste .text-slate-500,
+        body.alto-contraste .text-slate-600,
+        body.alto-contraste .text-slate-400 { color: #0f172a !important; font-weight: 500 !important; }
+        body.alto-contraste .bg-slate-50 { background-color: #f8fafc !important; border-color: #cbd5e1 !important; }
+        body.alto-contraste p,
+        body.alto-contraste span,
+        body.alto-contraste td { color: #000000 !important; }
+        body.navegacion-simplificada * { transition: none !important; }
+        body.navegacion-simplificada .text-slate-400,
+        body.navegacion-simplificada p.text-sm { display: none !important; }
+        body.navegacion-simplificada [data-tab-paciente] { padding-top: 1rem !important; padding-bottom: 1rem !important; font-size: 1rem !important; }
+        body.navegacion-simplificada .bg-white { border: 2px solid #e2e8f0 !important; }
+    </style>
+    {% include 'includes/global_ui_assets.html' %}
+</head>
+<body class="bg-slate-50 min-h-screen font-sans text-gray-800">
+    {% if messages %}
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 4000,
+                    timerProgressBar: true,
+                    iconColor: '#059669',
+                    customClass: {
+                        popup: 'bg-emerald-50 border border-emerald-200 rounded-xl shadow-lg px-4 py-3',
+                        title: 'text-emerald-950 text-sm font-bold',
+                        htmlContainer: 'text-emerald-800 text-xs mt-0.5',
+                        icon: 'bg-emerald-100 border-0 text-emerald-600',
+                    },
+                });
+                {% for message in messages %}
+                    setTimeout(function () {
+                        toast.fire({
+                            icon: '{% if "error" in message.tags %}error{% elif "success" in message.tags %}success{% elif "warning" in message.tags %}warning{% else %}info{% endif %}',
+                            title: '{% if "error" in message.tags %}¡Atención!{% elif "success" in message.tags %}¡Éxito!{% else %}Aviso{% endif %}',
+                            text: '{{ message|escapejs }}',
+                        });
+                    }, {{ forloop.counter0 }} * 450);
+                {% endfor %}
+            });
+        </script>
+    {% endif %}
+
+    <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 bg-white border border-gray-200 rounded-xl px-4 py-2 text-sm font-semibold shadow">
+        Saltar al contenido
+    </a>
+
+    <div class="flex min-h-screen bg-slate-50">
+    <header class="md:hidden fixed top-0 inset-x-0 z-40 bg-white/90 backdrop-blur border-b border-slate-200/60">
+        <div class="h-16 px-4 flex items-center justify-between gap-3">
+            <button type="button" id="btn-open-mobile-sidebar" class="w-11 h-11 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-700">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <path d="M4 6h16"/>
+                    <path d="M4 12h16"/>
+                    <path d="M4 18h16"/>
+                </svg>
+            </button>
+            <div class="min-w-0">
+                <div class="text-sm font-semibold text-slate-900 truncate">Assist Care</div>
+                <div class="text-[11px] text-slate-500 truncate">Portal del Paciente</div>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="relative inline-block">
+                    <button type="button" id="notification-bell" aria-haspopup="true" aria-controls="notification-panel-mobile" aria-expanded="false" class="relative w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-700">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                            <path d="M13.7 21a2 2 0 0 1-3.4 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        </svg>
+                        <span id="notification-bell-badge" class="{% if notificaciones_paciente %}{% else %}hidden {% endif %}absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white text-[10px] font-bold flex items-center justify-center border-2 border-white">{% if notificaciones_paciente %}{{ notificaciones_paciente|length }}{% endif %}</span>
+                    </button>
+                    <div id="notification-panel-mobile" class="hidden absolute right-0 mt-2 w-80 max-w-[calc(100vw-24px)] bg-white rounded-2xl shadow-xl border border-slate-100 z-50 overflow-hidden">
+                        <div class="px-4 py-3 border-b border-slate-100 bg-slate-50/70">
+                            <div class="text-sm font-bold text-slate-900">Notificaciones</div>
+                            <div class="text-xs text-slate-500 mt-0.5">Alertas recientes de tus solicitudes y servicios.</div>
+                        </div>
+                        <div class="max-h-80 overflow-y-auto overflow-x-hidden ax-scrollbar divide-y divide-slate-100">
+                            {% if notificaciones_paciente %}
+                                {% for nota in notificaciones_paciente %}
+                                    <a href="{% url 'dashboard_discapacitado' %}?tab={{ nota.tab }}" class="flex items-start gap-3 px-4 py-3.5 hover:bg-slate-50 transition-colors">
+                                        {% if nota.tipo == 'success' or nota.tipo == 'exito' %}
+                                            <span class="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 shrink-0">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                                    <path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                </svg>
+                                            </span>
+                                        {% else %}
+                                            <span class="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-full bg-amber-50 text-amber-600 shrink-0">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                                    <path d="M12 8v4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+                                                    <path d="M12 16h.01" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/>
+                                                    <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                                                </svg>
+                                            </span>
+                                        {% endif %}
+                                        <div class="min-w-0">
+                                            <div class="text-[11px] font-semibold {% if nota.tipo == 'success' or nota.tipo == 'exito' %}text-emerald-700{% else %}text-amber-700{% endif %}">
+                                                {{ nota.etiqueta }}
+                                            </div>
+                                            <div class="mt-1 text-sm font-bold text-slate-900 leading-snug">
+                                                {{ nota.titulo }}
+                                            </div>
+                                            <div class="mt-1 text-xs text-slate-600 leading-relaxed">
+                                                {{ nota.descripcion }}
+                                            </div>
+                                        </div>
+                                    </a>
+                                {% endfor %}
+                            {% else %}
+                                <div class="px-4 py-8 text-center">
+                                    <div class="mx-auto h-10 w-10 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                            <path d="M13.7 21a2 2 0 0 1-3.4 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                        </svg>
+                                    </div>
+                                    <div class="mt-3 text-sm font-semibold text-slate-700">Todo al día</div>
+                                    <div class="mt-1 text-xs text-slate-500">
+                                        No tienes notificaciones nuevas por ahora.
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="px-4 py-3 border-t border-slate-100 bg-[#f2faf7]">
+                            <a href="{% url 'dashboard_discapacitado' %}?tab=dashboard" class="w-full inline-flex items-center justify-center bg-[#0b2f24] hover:bg-[#123d30] text-white text-sm font-semibold px-4 py-2.5 rounded-2xl transition-colors">
+                                Ir al dashboard
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" id="btn-open-biometrics" class="h-10 w-10 rounded-full overflow-hidden bg-[#edf7f4] border border-emerald-100/70 flex items-center justify-center text-[#0b2f24] font-bold">
+                    {% if perfil and perfil.foto_perfil %}
+                        <img src="{{ perfil.foto_perfil.url }}" alt="Foto de perfil" class="h-10 w-10 object-cover rounded-full" />
+                    {% else %}
+                        {{ usuario.email|slice:":1"|upper }}
+                    {% endif %}
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div id="mobile-sidebar-overlay" class="hidden md:hidden fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300 ease-out" aria-hidden="true"></div>
+    <aside id="mobile-sidebar-drawer" class="md:hidden fixed top-0 left-0 z-50 h-screen w-[88%] max-w-sm bg-white shadow-2xl border-r border-slate-200/60 flex flex-col -translate-x-full transition-transform duration-300 ease-out" aria-hidden="true">
+        <div class="h-16 px-4 flex items-center justify-between border-b border-slate-200/60">
+            <div class="text-sm font-semibold text-slate-900">Navegación</div>
+            <button type="button" id="btn-close-mobile-sidebar" class="w-11 h-11 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-700">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+                    <path d="M18 6 6 18M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <div class="p-4 overflow-y-auto">
+            <div class="bg-slate-50 border border-slate-100 rounded-2xl p-4">
+                <div class="text-sm font-semibold text-slate-900 truncate">{{ usuario.nombre_completo|default:usuario.email }}</div>
+                <div class="text-xs text-slate-500 mt-1">{% if usuario.is_active %}Miembro Activo{% else %}Verificación en proceso{% endif %}</div>
+            </div>
+
+            <nav class="mt-4 space-y-2" aria-label="Navegación de cuenta móvil">
+                <button type="button" data-tab-paciente="dashboard" class="w-full text-left px-4 py-3 rounded-xl text-sm bg-emerald-400 text-slate-900 font-semibold">Dashboard</button>
+                <button type="button" data-tab-paciente="historial" class="w-full text-left px-4 py-3 rounded-xl text-sm bg-white border border-slate-200 text-slate-700 font-semibold">Historial Médico</button>
+                <button type="button" data-tab-paciente="equipo" class="w-full text-left px-4 py-3 rounded-xl text-sm bg-white border border-slate-200 text-slate-700 font-semibold">Equipo de Cuidado</button>
+                <button type="button" data-tab-paciente="accesibilidad" class="w-full text-left px-4 py-3 rounded-xl text-sm bg-white border border-slate-200 text-slate-700 font-semibold">Accesibilidad</button>
+                <button type="button" data-tab-paciente="ajustes" class="w-full text-left px-4 py-3 rounded-xl text-sm bg-white border border-slate-200 text-slate-700 font-semibold">Ajustes</button>
+            </nav>
+
+            <div class="mt-4 space-y-2">
+                <a href="{% url 'trigger_emergency_support' %}" data-emergency-support-url="{% url 'trigger_emergency_support' %}" class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 font-semibold text-sm transition-colors">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="opacity-90">
+                        <path d="M12 9v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M12 17h.01" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                        <path d="M10.3 4.3 3 20h18L13.7 4.3a2 2 0 0 0-3.4 0Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                    </svg>
+                    Soporte de Emergencia
+                </a>
+                <button type="button" id="btn-personal-sos-mobile" class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100 font-semibold text-sm transition-colors">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="opacity-90">
+                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.08 4.2 2 2 0 0 1 4.06 2h3a2 2 0 0 1 2 1.72c.12.86.3 1.7.54 2.52a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.56-1.06a2 2 0 0 1 2.11-.45c.82.24 1.66.42 2.52.54A2 2 0 0 1 22 16.92Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Enviar SOS al Contacto
+                </button>
+            </div>
+
+            <div class="mt-4 pt-4 border-t border-slate-200/60">
+                <a href="{% url 'logout' %}" class="w-full flex items-center justify-center px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors">
+                    Cerrar sesión
+                </a>
+            </div>
+        </div>
+    </aside>
+
+    <aside class="hidden md:flex fixed top-0 left-0 h-screen w-64 bg-slate-50 border-r border-slate-200/60 p-5 flex-col justify-between z-40">
+        <div>
+            <div class="flex items-start gap-3">
+                <div class="w-11 h-11 rounded-2xl bg-white/80 border border-emerald-100/70 flex items-center justify-center text-[#0b2f24]">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 2l8 4v6c0 6-8 10-8 10S4 18 4 12V6l8-4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                        <path d="M10 12h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        <path d="M12 10v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="text-lg font-bold text-[#0b2f24] leading-tight">Assist Care</div>
+                    <div class="text-xs font-semibold text-emerald-900/70 -mt-0.5">Profile Settings</div>
+                </div>
+            </div>
+
+            <div class="mt-7 bg-white/70 border border-emerald-100/60 rounded-3xl p-5">
+                <div class="flex items-center gap-4">
+                    <div id="container-avatar-update" class="relative group cursor-pointer w-14 h-14 rounded-full bg-[#edf7f4] border-4 border-[#5effa7] flex items-center justify-center text-[#0b2f24] font-bold overflow-hidden" aria-hidden="true">
+                        {% if perfil and perfil.foto_perfil %}
+                            <img id="avatar-preview-sidebar" src="{{ perfil.foto_perfil.url }}" alt="Foto de perfil" class="w-full h-full object-cover" />
+                        {% else %}
+                            {{ usuario.email|slice:":1"|upper }}
+                        {% endif %}
+                        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-white">
+                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="min-w-0">
+                        <div class="text-base font-bold text-gray-900 truncate">{{ usuario.nombre_completo|default:usuario.email }}</div>
+                        <div class="text-xs text-gray-600 mt-0.5">
+                            {% if usuario.is_active %}Miembro Activo{% else %}Verificación en proceso{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="mt-7 space-y-1" aria-label="Navegación de cuenta">
+                <button type="button" data-tab-paciente="dashboard" class="w-full text-left flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm bg-emerald-400 text-slate-900 font-semibold transition-all duration-200">
+                    <svg class="opacity-80" width="18" height="18" viewBox="0 0 24 24" fill="none">
+                        <path d="M3 10l9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1V10Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                    </svg>
+                    Dashboard
+                </button>
+                <button type="button" data-tab-paciente="historial" class="w-full text-left flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-emerald-50 transition-all duration-200">
+                    <svg class="opacity-80" width="18" height="18" viewBox="0 0 24 24" fill="none">
+                        <path d="M9 11h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        <path d="M12 8v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        <path d="M19 21H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h3l2-2h4l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                    </svg>
+                    Historial Médico
+                </button>
+                <button type="button" data-tab-paciente="equipo" class="w-full text-left flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-emerald-50 transition-all duration-200">
+                    <svg class="opacity-80" width="18" height="18" viewBox="0 0 24 24" fill="none">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                    Equipo de Cuidado
+                </button>
+                <button type="button" data-tab-paciente="accesibilidad" class="w-full text-left flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-emerald-50 transition-all duration-200">
+                    <svg class="opacity-80" width="18" height="18" viewBox="0 0 24 24" fill="none">
+                        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/>
+                    </svg>
+                    Accesibilidad
+                </button>
+                <button type="button" data-tab-paciente="ajustes" class="w-full text-left flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-slate-600 hover:bg-emerald-50 transition-all duration-200">
+                    Ajustes
+                </button>
+            </nav>
+
+            <a id="btn-soporte-emergencia" href="{% url 'trigger_emergency_support' %}" data-emergency-support-url="{% url 'trigger_emergency_support' %}" class="mt-7 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 font-semibold text-sm transition-colors shadow-sm">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="opacity-90">
+                    <path d="M12 9v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M12 17h.01" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                    <path d="M10.3 4.3 3 20h18L13.7 4.3a2 2 0 0 0-3.4 0Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                </svg>
+                Soporte de Emergencia
+            </a>
+            <button type="button" id="btn-personal-sos" class="w-full mt-2 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100 font-semibold text-sm transition-colors shadow-sm">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="opacity-90">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.08 4.2 2 2 0 0 1 4.06 2h3a2 2 0 0 1 2 1.72c.12.86.3 1.7.54 2.52a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.56-1.06a2 2 0 0 1 2.11-.45c.82.24 1.66.42 2.52.54A2 2 0 0 1 22 16.92Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Enviar SOS al Contacto
+            </button>
+        </div>
+
+        <div class="pt-4 border-t border-slate-200/60">
+            <a href="{% url 'logout' %}" class="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200 group">
+                <span class="text-slate-400 group-hover:text-red-500 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                </span>
+                Cerrar sesión
+            </a>
+        </div>
+    </aside>
+
+    <div id="main" class="flex-1 md:ml-64 ml-0 min-h-screen flex flex-col pt-20 pb-24 md:pb-8 md:pt-0 px-4 md:px-8 md:py-8 overflow-y-auto ax-scrollbar">
+        <div class="w-full">
+            <form id="form-settings" method="POST" action="{% url 'dashboard_discapacitado' %}">
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="settings" />
+
+                <div id="pane-ajustes" class="tab-content-paciente w-full hidden">
+                    <div class="grid grid-cols-1 xl:grid-cols-12 gap-8">
+                    <section class="xl:col-span-7 space-y-6" id="ajustes">
+                        <div class="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
+                            <div class="flex items-center justify-between gap-4 flex-wrap">
+                                <h1 class="text-lg font-bold text-gray-900">Información Personal</h1>
+                                <div class="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#e1f5ee] text-emerald-800">Perfil</div>
+                            </div>
+
+                            <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="full_name" class="text-sm font-semibold text-gray-700">Nombre completo</label>
+                                    <input id="full_name" name="full_name" type="text" autocomplete="name" value="{{ usuario.nombre_completo|default:'' }}" class="mt-2 w-full bg-[#e1f5ee] border-0 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-[#5effa7]" />
+                                </div>
+                                <div>
+                                    <label for="dob" class="text-sm font-semibold text-gray-700">Fecha de nacimiento</label>
+                                    <input id="dob" name="fecha_nacimiento" type="date" value="{% if perfil and perfil.fecha_nacimiento %}{{ perfil.fecha_nacimiento|date:'Y-m-d' }}{% endif %}" class="mt-2 w-full bg-[#e1f5ee] border-0 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-[#5effa7]" />
+                                </div>
+                                <div class="md:col-span-2">
+                                    <label for="bio" class="text-sm font-semibold text-gray-700">Biografía</label>
+                                    <textarea id="bio" name="bio" class="mt-2 w-full bg-[#e1f5ee] border-0 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-[#5effa7] h-28 resize-none" placeholder="Escribe una breve descripción sobre ti...">{% if perfil %}{{ perfil.biografia }}{% endif %}</textarea>
+                                    <p class="mt-2 text-xs text-gray-500">Esto ayuda a tu equipo de cuidado a entender mejor tus necesidades.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-[#0b2f24] text-white rounded-3xl p-8 shadow-md relative overflow-hidden">
+                            <div class="absolute -top-14 -right-14 w-56 h-56 rounded-full bg-emerald-500/10"></div>
+                            <div class="absolute -bottom-16 -left-16 w-64 h-64 rounded-full bg-emerald-500/10"></div>
+
+                            <div class="relative">
+                                <div class="flex items-center justify-between gap-4 flex-wrap">
+                                    <h2 class="text-lg font-bold">Mi Historia</h2>
+                                    <div class="text-xs font-semibold px-2.5 py-1 rounded-full bg-white/10 border border-white/10">Tu voz importa</div>
+                                </div>
+
+                                <p class="mt-4 text-sm text-emerald-50/80 italic">
+                                    “Compartir tu historia nos ayuda a brindarte un acompañamiento más humano, seguro e inclusivo.”
+                                </p>
+
+                                <label for="story" class="sr-only">Tu historia</label>
+                                <textarea
+                                    id="story"
+                                    name="historia"
+                                    class="mt-6 bg-white/10 border border-white/10 rounded-2xl p-4 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-[#5effa7] w-full h-32 resize-none"
+                                    placeholder="Escribe más de tu experiencia o requerimientos aquí..."
+                                >{% if perfil %}{{ perfil.historia }}{% endif %}</textarea>
+                            </div>
+                        </div>
+                    </section>
+
+                    <aside class="xl:col-span-5 space-y-6">
+                        <div id="form-emergencia" class="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm max-w-2xl">
+                            <div class="flex items-center justify-between mb-5">
+                                <div class="flex items-center gap-2.5">
+                                    <h3 class="text-base font-semibold text-slate-800">Contacto de Emergencia</h3>
+                                </div>
+                                <button type="submit" form="form-settings" id="btn-guardar-emergencia" class="text-sm font-medium text-emerald-600 hover:text-emerald-700 transition-colors">
+                                    Guardar
+                                </button>
+                            </div>
+
+                            <div class="bg-slate-50/60 rounded-xl p-4 border border-slate-100 flex gap-4 items-start mb-4">
+                                <div class="w-10 h-10 rounded-full bg-white border border-slate-200/80 flex items-center justify-center font-semibold text-slate-600 shadow-sm shrink-0 mt-1" aria-hidden="true">
+                                    C
+                                </div>
+
+                                <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                                    <div class="md:col-span-2">
+                                        <input id="input-emergencia-nombre" name="emergency_nombre" type="text" value="{% if perfil %}{{ perfil.emergency_contact_name|default:perfil.emergency_nombre }}{% endif %}" placeholder="Nombre completo" class="w-full px-3.5 py-2 text-sm bg-white border border-slate-200 rounded-lg text-slate-700 placeholder-slate-400 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/10 transition-all" />
+                                    </div>
+
+                                    <div>
+                                        <input id="input-emergencia-parentesco" name="emergency_parentesco" type="text" value="{% if perfil %}{{ perfil.emergency_contact_relationship|default:perfil.emergency_parentesco }}{% endif %}" placeholder="Parentesco (Madre, Pareja)" class="w-full px-3.5 py-2 text-sm bg-white border border-slate-200 rounded-lg text-slate-700 placeholder-slate-400 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/10 transition-all" />
+                                    </div>
+
+                                    <div class="relative">
+                                        <span class="absolute inset-y-0 left-0 flex items-center px-3 text-xs font-bold text-slate-600 bg-slate-50 border border-slate-200 border-r-0 rounded-l-lg">
+                                            +57
+                                        </span>
+                                        <input id="input-emergencia-telefono" name="emergency_telefono" type="tel" value="{% if perfil %}{{ perfil.emergency_contact_phone|default:perfil.emergency_telefono }}{% endif %}" placeholder="Teléfono" class="w-full pl-16 pr-3.5 py-2 text-sm bg-white border border-slate-200 border-l-0 rounded-l-none rounded-r-lg text-slate-700 placeholder-slate-400 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/10 transition-all" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button type="button" class="w-full py-2.5 border border-dashed border-slate-200 hover:border-emerald-300 rounded-xl text-sm font-medium text-slate-500 hover:text-emerald-600 hover:bg-emerald-50/30 transition-all flex items-center justify-center gap-1.5">
+                                <span>+</span> Agregar Nuevo Contacto
+                            </button>
+                        </div>
+                    </aside>
+                </div>
+
+                <div class="mt-10 max-w-3xl">
+                    <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                        <div class="text-base font-bold text-gray-900">Seguridad de Datos</div>
+                        <div class="text-sm text-gray-600 mt-2">
+                            Tus datos se manejan con controles de acceso y buenas prácticas. Evita compartir información sensible por canales no oficiales.
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" form="form-settings" class="fixed bottom-6 right-6 bg-[#0b2f24] text-white hover:bg-[#123d30] font-medium py-3.5 px-6 rounded-2xl shadow-lg text-sm flex items-center gap-2 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-200" aria-label="Guardar todos los ajustes">
+                    Guardar Todos los Ajustes
+                </button>
+                </div>
+
+                <div id="pane-accesibilidad" class="tab-content-paciente w-full hidden">
+                <div class="max-w-2xl">
+                    <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100" id="accesibilidad">
+                        <div class="flex items-center justify-between gap-4 flex-wrap">
+                            <h2 class="text-base font-bold text-gray-900">Preferencias de Accesibilidad</h2>
+                            <span class="text-[11px] font-bold tracking-wider px-2 py-1 rounded-full bg-[#e1f5ee] text-emerald-800">A11Y</span>
+                        </div>
+
+                        <div class="mt-5 space-y-3">
+                            <div class="flex items-center justify-between gap-4 bg-[#f2faf7] border border-gray-100 rounded-2xl p-4">
+                                <div>
+                                    <div class="text-sm font-semibold text-gray-900">Lector de Pantalla</div>
+                                    <div class="text-xs text-gray-500 mt-0.5">Optimiza etiquetas y navegación.</div>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="switch-lector-pantalla" name="screen_reader" class="sr-only peer" {% if perfil and perfil.acces_screen_reader %}checked{% endif %}>
+                                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                                </label>
+                            </div>
+
+                            <div class="flex items-center justify-between gap-4 bg-[#f2faf7] border border-gray-100 rounded-2xl p-4">
+                                <div>
+                                    <div class="text-sm font-semibold text-gray-900">Alto Contraste</div>
+                                    <div class="text-xs text-gray-500 mt-0.5">Mejor visibilidad en textos.</div>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="switch-alto-contraste" name="high_contrast" class="sr-only peer" {% if perfil is None or perfil.acces_high_contrast %}checked{% endif %}>
+                                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                                </label>
+                            </div>
+
+                            <div class="flex items-center justify-between gap-4 bg-[#f2faf7] border border-gray-100 rounded-2xl p-4">
+                                <div>
+                                    <div class="text-sm font-semibold text-gray-900">Navegación Simplificada</div>
+                                    <div class="text-xs text-gray-500 mt-0.5">Menos pasos para acciones clave.</div>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" id="switch-navegacion-simplificada" name="simplified_nav" class="sr-only peer" {% if perfil and perfil.acces_simplified_nav %}checked{% endif %}>
+                                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" form="form-settings" class="fixed bottom-6 right-6 bg-[#0b2f24] text-white hover:bg-[#123d30] font-medium py-3.5 px-6 rounded-2xl shadow-lg text-sm flex items-center gap-2 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-200" aria-label="Guardar todos los ajustes">
+                    Guardar Todos los Ajustes
+                </button>
+                </div>
+            </form>
+        </div>
+
+        <div id="pane-dashboard" class="tab-content-paciente w-full fade-in">
+            <section class="mt-10 grid grid-cols-1 xl:grid-cols-12 gap-8" id="dashboard" aria-label="Solicitudes y servicios">
+                <div class="xl:col-span-12 space-y-6">
+                    {% if servicio_activo %}
+                        <div class="bg-white rounded-[2rem] border border-slate-100 p-4 sm:p-6 shadow-sm">
+                            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <div class="text-xs font-bold uppercase tracking-wider text-slate-400">Servicio activo</div>
+                                    <div class="mt-1 text-base font-extrabold text-slate-900">Tu PIN de inicio</div>
+                                    <div class="mt-1 text-xs text-slate-500">Compártelo únicamente con tu voluntario para iniciar el viaje.</div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    {% if servicio_activo.codigo_verificacion %}
+                                        <div class="inline-flex items-center gap-2 rounded-2xl bg-slate-50 px-4 py-2 ring-1 ring-slate-200">
+                                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">PIN</span>
+                                            <span class="font-mono text-lg font-black text-slate-900">{{ servicio_activo.codigo_verificacion }}</span>
+                                        </div>
+                                        <button type="button" data-copy-pin="{{ servicio_activo.codigo_verificacion }}" class="inline-flex items-center justify-center rounded-2xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-emerald-700">
+                                            Copiar
+                                        </button>
+                                    {% else %}
+                                        <div class="text-xs font-semibold text-slate-600">PIN no asignado</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    <div class="bg-white rounded-[2rem] border border-slate-100 p-4 sm:p-6 md:p-8 shadow-sm mb-6">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-5 mb-6">
+                            <div>
+                                <h3 class="text-lg font-bold text-slate-800 tracking-tight">Solicitudes de Acompañamiento</h3>
+                                <p class="text-xs text-slate-400 mt-0.5">Listado y estado de control de sus peticiones vigentes.</p>
+                            </div>
+                            <button type="button" onclick="openAccompanimentModal()" class="px-5 py-2.5 bg-emerald-950 hover:bg-emerald-900 text-white font-semibold text-xs rounded-xl transition-all shadow-sm active:scale-95 tracking-wide">
+                                + Solicitar Acompañamiento
+                            </button>
+                        </div>
+
+                        {% if servicios_por_aceptar %}
+                            <div class="w-full grid grid-cols-1 gap-4 sm:max-w-xl sm:mx-auto md:max-w-3xl md:mx-auto md:grid-cols-2 lg:max-w-none lg:grid-cols-3">
+                                {% for servicio in servicios_por_aceptar %}
+                                    <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 mb-4 w-full hover:shadow-md transition-all">
+                                        <div class="flex items-start justify-between gap-3">
+                                            <div class="flex items-start gap-3 min-w-0">
+                                                <div class="h-10 w-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-600 shrink-0">
+                                                    {{ usuario.email|slice:":1"|upper }}
+                                                </div>
+                                                <div class="min-w-0">
+                                                    <div class="text-sm font-semibold text-slate-900 truncate">{{ usuario.nombre_completo|default:usuario.email }}</div>
+                                                    <div class="text-xs text-slate-500 truncate">{{ usuario.email }}</div>
+                                                </div>
+                                            </div>
+                                            <span class="shrink-0 px-2.5 py-1 text-[10px] font-bold {% if servicio.estado == 'asignada' %}bg-emerald-50 text-emerald-800 border border-emerald-200/50{% else %}bg-amber-50 text-amber-800 border border-amber-200/50{% endif %} rounded-lg uppercase tracking-wider">
+                                                {% if servicio.estado == 'asignada' %}Asignado & Activo{% else %}Por Aceptar{% endif %}
+                                            </span>
+                                        </div>
+
+                                        <div class="mt-3 text-sm font-semibold text-slate-900 leading-snug">{{ servicio.titulo }}</div>
+                                        <p class="text-xs text-slate-400 leading-relaxed mt-1">{{ servicio.descripcion }}</p>
+
+                                        <div class="mt-3 space-y-2 text-xs bg-slate-50/60 border border-slate-100 rounded-xl p-3 mb-3">
+                                            <div class="flex justify-between items-center border-b border-slate-100 pb-1.5">
+                                                <span class="text-slate-400 font-medium text-[10px] uppercase tracking-wider">Fecha Requerida</span>
+                                                <span class="font-semibold text-slate-700 text-right">{{ servicio.fecha_evento|date:"l, d \\d\\e F \\d\\e Y"|title }}</span>
+                                            </div>
+                                            <div class="flex justify-between items-center border-b border-slate-100 pb-1.5">
+                                                <span class="text-slate-400 font-medium text-[10px] uppercase tracking-wider">Rango Horario</span>
+                                                <span class="font-semibold text-slate-700 text-right">{{ servicio.fecha_evento|time:"h:i A" }}{% if servicio.fecha_fin %} - {{ servicio.fecha_fin|time:"h:i A" }}{% else %} - --{% endif %}</span>
+                                            </div>
+                                            <div class="flex flex-col gap-1 pt-0.5">
+                                                <span class="text-slate-400 font-medium text-[10px] uppercase tracking-wider">Dirección de recogida</span>
+                                                <span class="font-semibold text-slate-700 break-words line-clamp-2">{{ servicio.direccion }}</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex gap-3 mt-3">
+                                            {% if servicio.puede_cancelarse %}
+                                                <form action="{% url 'cancelar_solicitud' servicio.id %}" method="POST" class="flex-1 m-0 p-0">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="w-full bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold py-2 rounded-xl border border-slate-200 transition-colors text-center">
+                                                        Cancelar solicitud
+                                                    </button>
+                                                </form>
+                                            {% endif %}
+                                            {% if servicio.latitud and servicio.longitud %}
+                                                <a
+                                                    href="#"
+                                                    onclick="window.open('https://www.google.com/maps/search/?api=1&query=' + '{{ servicio.latitud }}'.replace(',', '.') + ',' + '{{ servicio.longitud }}'.replace(',', '.'), '_blank', 'noopener'); return false;"
+                                                    class="flex-1 inline-flex items-center justify-center bg-[#0b2f24] hover:bg-[#123d30] text-white text-xs font-semibold py-2 rounded-xl transition-colors text-center"
+                                                >
+                                                    Ver localización en mapa
+                                                </a>
+                                            {% endif %}
+                                        </div>
+
+                                        <div class="mt-4 pt-4 border-t border-slate-100">
+                                            {% if servicio.estado == 'activa' %}
+                                                <h5 class="text-xs font-bold tracking-tight uppercase tracking-wider text-[10px] text-slate-400 mb-3">Enfermeros Postulados</h5>
+
+                                                {% if servicio.postulaciones_pendientes %}
+                                                    <div class="space-y-3">
+                                                        {% for postulacion in servicio.postulaciones_pendientes %}
+                                                            {% with enfermero=postulacion.enfermero perfil_enfermero=postulacion.enfermero.perfil_enfermero %}
+                                                                <div class="w-full bg-slate-50/40 border border-slate-100 rounded-2xl p-3 sm:p-4">
+                                                                    <div class="flex items-start gap-3.5 min-w-0">
+                                                                        <div class="w-12 h-12 rounded-full border border-slate-200/80 bg-slate-100 overflow-hidden shrink-0">
+                                                                            {% if perfil_enfermero and perfil_enfermero.foto_perfil %}
+                                                                                <img src="{{ perfil_enfermero.foto_perfil.url }}" alt="Perfil" class="w-full h-full object-cover">
+                                                                            {% else %}
+                                                                                <div class="w-full h-full flex items-center justify-center text-slate-400 font-bold text-sm bg-slate-200">
+                                                                                    {{ enfermero.email|slice:":2"|upper }}
+                                                                                </div>
+                                                                            {% endif %}
+                                                                        </div>
+                                                                        <div class="min-w-0">
+                                                                            <h6 class="font-bold text-slate-800 text-sm tracking-tight capitalize truncate">{{ enfermero.nombre_completo|default:enfermero.email }}</h6>
+                                                                            <div class="mt-0.5 flex flex-wrap items-center gap-2">
+                                                                                <span class="inline-flex text-[10px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-100 rounded px-1.5 py-0.5">
+                                                                                    Reg: {% if perfil_enfermero and perfil_enfermero.url_tarjeta_profesional %}Cargada{% else %}TP-Pendiente{% endif %}
+                                                                                </span>
+                                                                                {% if perfil_enfermero and perfil_enfermero.especialidad %}
+                                                                                    <span class="text-[10px] font-semibold text-slate-500 bg-white border border-slate-200/70 rounded px-1.5 py-0.5">
+                                                                                        {{ perfil_enfermero.especialidad }}
+                                                                                    </span>
+                                                                                {% endif %}
+                                                                            </div>
+                                                                            <p class="text-[11px] text-slate-400 mt-1 line-clamp-2">
+                                                                                {% if perfil_enfermero and perfil_enfermero.biografia %}{{ perfil_enfermero.biografia }}{% else %}Sin descripción profesional registrada.{% endif %}
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div class="flex gap-3 mt-3 pt-3 border-t border-slate-200/70">
+                                                                        <button
+                                                                            type="button"
+                                                                            data-open-enfermero-perfil="1"
+                                                                            data-nombre="{{ enfermero.nombre_completo|default:enfermero.email|escape }}"
+                                                                            data-especialidad="{% if perfil_enfermero and perfil_enfermero.especialidad %}{{ perfil_enfermero.especialidad|escape }}{% endif %}"
+                                                                            data-biografia="{% if perfil_enfermero and perfil_enfermero.biografia %}{{ perfil_enfermero.biografia|escape }}{% endif %}"
+                                                                            data-tarjeta-url="{% if perfil_enfermero and perfil_enfermero.url_tarjeta_profesional %}{{ perfil_enfermero.tarjeta_profesional_url|escape }}{% endif %}"
+                                                                            data-foto-url="{% if perfil_enfermero and perfil_enfermero.foto_perfil %}{{ perfil_enfermero.foto_perfil.url|escape }}{% endif %}"
+                                                                            class="flex-1 px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-xl transition-colors border border-slate-200/80 text-center"
+                                                                        >
+                                                                            Visualizar perfil
+                                                                        </button>
+                                                                        <form action="{% url 'aceptar_postulacion' servicio.id enfermero.id %}" method="POST" class="flex-1 m-0 p-0">
+                                                                            {% csrf_token %}
+                                                                            <button type="submit" class="w-full px-4 py-2 bg-emerald-950 hover:bg-emerald-900 text-white font-semibold text-xs rounded-xl transition-colors text-center">
+                                                                                Aceptar personal
+                                                                            </button>
+                                                                        </form>
+                                                                    </div>
+                                                                </div>
+                                                            {% endwith %}
+                                                        {% endfor %}
+                                                    </div>
+                                                {% else %}
+                                                    <p class="text-[11px] text-slate-400 italic bg-slate-50/50 rounded-xl p-3 text-center border border-dashed border-slate-100">Esperando postulaciones de personal médico certificado en la zona...</p>
+                                                {% endif %}
+
+                                            {% elif servicio.estado == 'asignada' and servicio.postulaciones_aceptadas %}
+                                                {% with enf_asignado=servicio.postulaciones_aceptadas.0.enfermero perfil_enfermero=servicio.postulaciones_aceptadas.0.enfermero.perfil_enfermero %}
+                                                    <h5 class="text-xs font-bold text-emerald-950 tracking-tight uppercase tracking-wider text-[10px] mb-3">Enfermero Asignado</h5>
+                                                    <div class="w-full bg-emerald-50/30 border border-emerald-100/60 rounded-xl p-3 sm:p-4">
+                                                        <div class="flex items-center gap-3 mb-4">
+                                                            <div class="w-10 h-10 rounded-full border border-emerald-200/60 bg-slate-100 overflow-hidden shrink-0">
+                                                                {% if perfil_enfermero and perfil_enfermero.foto_perfil %}
+                                                                    <img src="{{ perfil_enfermero.foto_perfil.url }}" alt="Asignado" class="w-full h-full object-cover">
+                                                                {% endif %}
+                                                            </div>
+                                                            <div>
+                                                                <h6 class="font-bold text-slate-800 text-sm capitalize">{{ enf_asignado.nombre_completo|default:enf_asignado.email }}</h6>
+                                                                <span class="text-[10px] text-slate-400">Tarjeta profesional: {% if perfil_enfermero and perfil_enfermero.url_tarjeta_profesional %}Cargada{% else %}No registrada{% endif %}</span>
+                                                            </div>
+                                                        </div>
+
+                                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-white border border-slate-100 rounded-xl p-3 mb-3 shadow-inner">
+                                                            <div class="flex flex-col">
+                                                                <span class="text-[9px] text-slate-400 font-medium uppercase tracking-wider">Correo Electrónico</span>
+                                                                <span class="font-semibold text-slate-700 truncate">{{ enf_asignado.email }}</span>
+                                                            </div>
+                                                            <div class="flex flex-col">
+                                                                <span class="text-[9px] text-slate-400 font-medium uppercase tracking-wider">Número de Contacto</span>
+                                                                <span class="font-semibold text-slate-700">{% if perfil_enfermero and perfil_enfermero.telefono_whatsapp %}{{ perfil_enfermero.telefono_whatsapp }}{% else %}No registrado{% endif %}</span>
+                                                            </div>
+                                                        </div>
+
+                                                        {% if perfil_enfermero and perfil_enfermero.telefono_whatsapp_wa %}
+                                                            <a href="https://wa.me/{{ perfil_enfermero.telefono_whatsapp_wa }}?text=Hola%2C%20he%20aceptado%20tu%20postulaci%C3%B3n%20en%20Assist%20Care%20para%20el%20servicio%3A%20{{ servicio.titulo|urlencode }}."
+                                                               target="_blank"
+                                                               rel="noopener"
+                                                           class="flex items-center justify-center gap-2 w-full px-3 py-2 sm:px-4 sm:py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs rounded-xl transition-all shadow-sm tracking-wide text-center">
+                                                                Coordinar Asistencia vía WhatsApp
+                                                            </a>
+                                                        {% endif %}
+                                                    </div>
+                                                {% endwith %}
+                                            {% endif %}
+                                        </div>
+
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            {% if servicios_por_aceptar.paginator.num_pages > 1 %}
+                                <div class="mt-6 flex items-center justify-between gap-3">
+                                    <a
+                                        {% if servicios_por_aceptar.has_previous %}
+                                            href="?tab=dashboard&por_aceptar_page={{ servicios_por_aceptar.previous_page_number }}"
+                                        {% endif %}
+                                        class="px-3 py-2 rounded-2xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 {% if not servicios_por_aceptar.has_previous %}opacity-50 cursor-not-allowed{% else %}hover:bg-slate-50{% endif %} transition-colors"
+                                    >
+                                        Anterior
+                                    </a>
+
+                                    <div class="flex items-center gap-1">
+                                        {% for num in servicios_por_aceptar.paginator.page_range %}
+                                            {% if num == servicios_por_aceptar.number %}
+                                                <span class="px-3 py-2 rounded-2xl bg-[#0b2f24] text-white text-xs font-semibold">{{ num }}</span>
+                                            {% else %}
+                                                <a href="?tab=dashboard&por_aceptar_page={{ num }}" class="px-3 py-2 rounded-2xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors">{{ num }}</a>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+
+                                    <a
+                                        {% if servicios_por_aceptar.has_next %}
+                                            href="?tab=dashboard&por_aceptar_page={{ servicios_por_aceptar.next_page_number }}"
+                                        {% endif %}
+                                        class="px-3 py-2 rounded-2xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 {% if not servicios_por_aceptar.has_next %}opacity-50 cursor-not-allowed{% else %}hover:bg-slate-50{% endif %} transition-colors"
+                                    >
+                                        Siguiente
+                                    </a>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="flex flex-col items-center justify-center text-center py-12 bg-slate-50/30 rounded-2xl border border-dashed border-slate-200/60 p-6">
+                                <h4 class="text-sm font-bold text-slate-700 tracking-tight">No hay solicitudes pendientes</h4>
+                                <p class="text-xs text-slate-400 mt-1 max-w-xs">Actualmente no registra solicitudes en estado de espera.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div id="pane-equipo" class="tab-content-paciente w-full hidden">
+            <div class="max-w-5xl">
+                <div class="mt-10 bg-white rounded-3xl p-6 shadow-sm border border-gray-100" id="equipo-cuidado">
+                    <div class="flex items-center justify-between gap-4 flex-wrap">
+                        <div>
+                            <div class="text-base font-bold text-gray-900">Equipo de Cuidado</div>
+                            <div class="text-xs text-gray-500 mt-1">Profesionales asignados a tu servicio actual.</div>
+                        </div>
+                    </div>
+
+                    {% if servicio_activo and servicio_activo.enfermero %}
+                        <div class="mt-5 bg-[#f2faf7] border border-gray-100 rounded-3xl p-5">
+                            <div class="flex items-start justify-between gap-4 flex-wrap">
+                                <div class="min-w-0">
+                                    <div class="font-semibold text-gray-900 truncate">
+                                        {{ servicio_activo.enfermero.nombre_completo|default:servicio_activo.enfermero.email }}
+                                    </div>
+                                    <div class="text-xs text-gray-500 mt-1">
+                                        {% if servicio_activo.enfermero.perfil_enfermero %}{{ servicio_activo.enfermero.perfil_enfermero.ciudad|default:"Ibagué" }}{% endif %}
+                                    </div>
+                                    {% if servicio_activo.enfermero.perfil_enfermero %}
+                                        <div class="mt-2 inline-flex px-2.5 py-1 rounded-full bg-white border border-gray-100 text-[11px] font-semibold text-gray-700">
+                                            Calificación: {{ servicio_activo.enfermero.perfil_enfermero.calificacion_promedio|floatformat:1 }}/5
+                                        </div>
+                                    {% endif %}
+                                    <div class="mt-3 flex flex-wrap items-center gap-2">
+                                        {% if servicio_activo.codigo_verificacion %}
+                                            <div class="inline-flex items-center gap-2 rounded-2xl bg-white px-3 py-2 ring-1 ring-slate-200">
+                                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">PIN</span>
+                                                <span class="font-mono text-sm font-black text-slate-900">{{ servicio_activo.codigo_verificacion }}</span>
+                                            </div>
+                                            <button type="button" data-copy-pin="{{ servicio_activo.codigo_verificacion }}" class="inline-flex items-center justify-center rounded-2xl bg-emerald-600 px-3 py-2 text-[11px] font-semibold text-white transition-colors hover:bg-emerald-700">
+                                                Copiar PIN
+                                            </button>
+                                        {% else %}
+                                            <div class="text-xs font-semibold text-slate-600">PIN no asignado</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                {% if servicio_activo.enfermero.perfil_enfermero and servicio_activo.enfermero.perfil_enfermero.telefono_whatsapp_wa %}
+                                    <a
+                                        href="https://wa.me/{{ servicio_activo.enfermero.perfil_enfermero.telefono_whatsapp_wa }}?text=Hola,%20soy%20tu%20paciente%20de%20Acompa%C3%B1amiento%20Seguro.%20Te%20escribo%20para%20coordinar%20nuestro%20servicio%20activo."
+                                        target="_blank"
+                                        rel="noopener"
+                                        class="inline-flex items-center gap-2 px-4 py-2 rounded-2xl font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
+                                    >
+                                        Contactar
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="mt-5 bg-[#f2faf7] border border-gray-100 rounded-3xl p-6 text-sm text-gray-600">
+                            No tienes un servicio activo. Tu equipo aparecerá aquí cuando haya un profesional asignado.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div id="pane-historial" class="tab-content-paciente w-full hidden">
+            <div class="max-w-5xl" id="historial-medico" aria-label="Historial médico y solicitudes">
+                <div class="mt-10 bg-white rounded-3xl p-6 shadow-sm border border-gray-100" id="historial">
+                    <div class="flex items-center justify-between gap-4 flex-wrap">
+                        <div>
+                            <div class="text-base font-bold text-gray-900">Historial</div>
+                            <div class="text-xs text-gray-500 mt-1">Revisa el estado de tus solicitudes y calificaciones.</div>
+                        </div>
+                    </div>
+
+                    {% if not peticiones %}
+                        <div class="mt-5 bg-[#f2faf7] border border-gray-100 rounded-3xl p-6 text-sm text-gray-600">
+                            Aún no tienes historial. Crea tu primera petición para recibir acompañamiento seguro.
+                        </div>
+                    {% else %}
+                        <div class="mt-5 space-y-4">
+                            {% for p in peticiones %}
+                                <div class="bg-[#f2faf7] border border-gray-100 rounded-3xl p-5">
+                                    <div class="flex items-start justify-between gap-4 flex-wrap">
+                                        <div>
+                                            <div class="font-semibold text-gray-900">{{ p.titulo }}</div>
+                                            <div class="text-xs text-gray-500 mt-1">{{ p.ciudad }} · {{ p.fecha_evento|date:"d/m/Y h:i A" }}</div>
+                                        </div>
+                                        <div class="text-xs font-semibold px-2 py-1 rounded-full bg-white border border-gray-100 text-gray-700">
+                                            {{ p.get_estado_display }}
+                                        </div>
+                                    </div>
+
+                                    {% if p.estado == 'activa' %}
+                                        <div class="mt-4">
+                                            <div class="text-sm font-bold text-gray-900">Candidatos</div>
+                                            {% if not p.postulaciones_pendientes %}
+                                                <div class="text-sm text-gray-600 mt-2">Esperando postulaciones de enfermeros…</div>
+                                            {% else %}
+                                                <div class="mt-3 space-y-3">
+                                                    {% for post in p.postulaciones_pendientes %}
+                                                        <div class="bg-white border border-gray-100 rounded-3xl p-4 flex items-center justify-between gap-4">
+                                                            <div class="min-w-0">
+                                                                <div class="font-semibold text-gray-900 truncate">
+                                                                    {{ post.enfermero.nombre_completo|default:post.enfermero.email }}
+                                                                </div>
+                                                                <div class="text-xs text-gray-500 mt-1">
+                                                                    {% if post.enfermero.perfil_enfermero %}{{ post.enfermero.perfil_enfermero.ciudad }}{% endif %}
+                                                                </div>
+                                                                {% if post.enfermero.perfil_enfermero %}
+                                                                    <div class="mt-2 inline-flex px-2.5 py-1 rounded-full bg-[#e1f5ee] text-emerald-800 text-[11px] font-semibold">
+                                                                        Calificación: {{ post.enfermero.perfil_enfermero.calificacion_promedio|floatformat:1 }}/5
+                                                                    </div>
+                                                                {% endif %}
+                                                            </div>
+                                                            <form method="POST" action="{% url 'aceptar_enfermero' post.id %}">
+                                                                {% csrf_token %}
+                                                                <button type="submit" class="bg-[#0b2f24] hover:bg-[#123d30] text-white text-sm font-semibold px-4 py-2 rounded-2xl transition-colors">
+                                                                    Aceptar
+                                                                </button>
+                                                            </form>
+                                                        </div>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+
+                                    {% if p.estado == 'completada' %}
+                                        <div class="mt-4 bg-white border border-gray-100 rounded-3xl p-4">
+                                            {% if p.calificacion_existente %}
+                                                <div class="text-sm font-bold text-gray-900">Calificación enviada</div>
+                                                <div class="mt-2 flex items-center gap-1" aria-label="Calificación {{ p.calificacion_existente.estrellas }} de 5">
+                                                    {% for i in "12345" %}
+                                                        <span class="{% if forloop.counter <= p.calificacion_existente.estrellas %}text-amber-500{% else %}text-gray-300{% endif %} text-lg leading-none" aria-hidden="true">★</span>
+                                                    {% endfor %}
+                                                    <span class="sr-only">{{ p.calificacion_existente.estrellas }} de 5</span>
+                                                </div>
+                                                {% if p.calificacion_existente.comentario %}
+                                                    <div class="text-sm text-gray-700 mt-2">{{ p.calificacion_existente.comentario }}</div>
+                                                {% endif %}
+                                            {% elif p.servicio_para_calificar %}
+                                                <div class="text-sm font-bold text-gray-900">Califica a tu acompañante</div>
+                                                <form id="form-calificar-{{ p.id }}" method="POST" action="{% url 'calificar_enfermero' p.servicio_para_calificar.id %}" class="mt-3">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" id="input-rating-{{ p.id }}" name="estrellas" required>
+                                                    <div id="stars-{{ p.id }}" class="flex items-center gap-1" role="radiogroup" aria-label="Selecciona una calificación de 1 a 5">
+                                                        {% for i in "12345" %}
+                                                            <button
+                                                                type="button"
+                                                                data-star="{{ i }}"
+                                                                class="text-gray-300 text-xl leading-none cursor-pointer hover:text-amber-400 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-200 rounded"
+                                                                aria-label="{{ i }} estrellas"
+                                                                onclick="setRating('{{ p.id }}', {{ i }})"
+                                                            >★</button>
+                                                        {% endfor %}
+                                                    </div>
+                                                    <div class="mt-3">
+                                                        <label for="comentario-{{ p.id }}" class="sr-only">Comentario</label>
+                                                        <input id="comentario-{{ p.id }}" name="comentario" maxlength="140" placeholder="Comentario (opcional)" class="w-full bg-[#edf7f4] border border-gray-100 rounded-2xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-200" />
+                                                        <div class="text-xs text-gray-500 mt-2">Máx. 140 caracteres.</div>
+                                                    </div>
+                                                    <button type="submit" class="sr-only" aria-label="Enviar calificación">Enviar</button>
+                                                </form>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                        {% if peticiones.paginator.num_pages > 1 %}
+                            <div class="mt-6 flex items-center justify-between gap-3">
+                                <a
+                                    {% if peticiones.has_previous %}
+                                        href="?tab=historial&historial_page={{ peticiones.previous_page_number }}"
+                                    {% endif %}
+                                    class="px-3 py-2 rounded-2xl border border-gray-200/70 bg-white text-xs font-semibold text-gray-700 {% if not peticiones.has_previous %}opacity-50 cursor-not-allowed{% else %}hover:bg-gray-50{% endif %} transition-colors"
+                                >
+                                    Anterior
+                                </a>
+                                <div class="flex items-center gap-1">
+                                    {% for num in peticiones.paginator.page_range %}
+                                        {% if num == peticiones.number %}
+                                            <span class="px-3 py-2 rounded-2xl bg-[#0b2f24] text-white text-xs font-semibold">{{ num }}</span>
+                                        {% else %}
+                                            <a href="?tab=historial&historial_page={{ num }}" class="px-3 py-2 rounded-2xl border border-gray-200/70 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors">{{ num }}</a>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <a
+                                    {% if peticiones.has_next %}
+                                        href="?tab=historial&historial_page={{ peticiones.next_page_number }}"
+                                    {% endif %}
+                                    class="px-3 py-2 rounded-2xl border border-gray-200/70 bg-white text-xs font-semibold text-gray-700 {% if not peticiones.has_next %}opacity-50 cursor-not-allowed{% else %}hover:bg-gray-50{% endif %} transition-colors"
+                                >
+                                    Siguiente
+                                </a>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <footer class="mt-10 border-t border-gray-200 pt-4 text-xs text-gray-500 flex items-center justify-between flex-wrap gap-2">
+            <div>Assist Care · Datos cifrados y protegidos.</div>
+            <div>© {% now "Y" %} Assist Care. Human Connection. Organic Trust.</div>
+        </footer>
+    </div>
+
+    <div id="peticionModal" class="hidden fixed inset-0 z-50" role="dialog" aria-modal="true" aria-labelledby="peticionModalTitle" aria-hidden="true">
+        <div class="absolute inset-0 bg-black/40"></div>
+        <div class="relative min-h-full flex items-center justify-center p-4">
+            <div class="bg-white rounded-[2rem] w-full max-w-2xl mx-auto flex flex-col max-h-[90vh] shadow-2xl overflow-hidden transform transition-all">
+                <script id="occupied-days-json" type="application/json">[{% for d in fechas_ocupadas %}"{{ d }}"{% if not forloop.last %},{% endif %}{% endfor %}]</script>
+                <form method="POST" id="form-peticion-acompanamiento" class="flex flex-col max-h-[90vh]">
+                    {% csrf_token %}
+                    <input type="hidden" name="form_type" value="peticion">
+                    <div class="p-6 md:p-8 border-b border-slate-50 flex justify-between items-start shrink-0">
+                        <div>
+                            <h3 id="peticionModalTitle" class="text-xl font-bold text-slate-800">Nueva petición de acompañamiento</h3>
+                            <p class="text-xs text-slate-400 mt-1">Completa la información para solicitar apoyo.</p>
+                        </div>
+                        <button type="button" onclick="closeAccompanimentModal()" class="text-sm font-medium text-slate-400 hover:text-slate-600">
+                            Cerrar
+                        </button>
+                    </div>
+
+                    <div class="p-6 md:p-8 overflow-y-auto flex-1 custom-scrollbar space-y-4">
+                        <div>
+                            <label for="titulo" class="text-sm font-semibold text-gray-700">Título de la asistencia</label>
+                            <input id="titulo" name="titulo" maxlength="150" required class="mt-2 w-full bg-[#edf7f4] border border-gray-100 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-200" />
+                        </div>
+                        <div>
+                            <label for="descripcion" class="text-sm font-semibold text-gray-700">Descripción detallada</label>
+                            <textarea id="descripcion" name="descripcion" required class="mt-2 w-full bg-[#edf7f4] border border-gray-100 rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-200 h-28 resize-none"></textarea>
+                        </div>
+                        <div class="space-y-3 mb-4">
+                            <div class="flex items-center gap-2 bg-amber-50 border border-amber-100 rounded-xl px-4 py-2.5 text-xs text-amber-800 font-medium">
+                                <span><strong>Información importante:</strong> Los servicios se agendan para un solo día y tienen una <strong>duración máxima permitida de 4 horas</strong>.</span>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label for="fecha_servicio" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Fecha del Servicio</label>
+                                    <input type="date" id="fecha_servicio" name="fecha_servicio" required class="w-full px-3 py-2.5 text-sm bg-slate-50 border border-slate-100 rounded-xl text-slate-700 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/10 transition-all">
+                                </div>
+                                <div>
+                                    <label for="hora_inicio" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Hora de Inicio</label>
+                                    <input type="time" id="hora_inicio" name="hora_inicio" required class="w-full px-3 py-2.5 text-sm bg-slate-50 border border-slate-100 rounded-xl text-slate-700 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/10 transition-all">
+                                </div>
+                                <div>
+                                    <label for="hora_fin" class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Hora de Fin</label>
+                                    <input type="time" id="hora_fin" name="hora_fin" required class="w-full px-3 py-2.5 text-sm bg-slate-50 border border-slate-100 rounded-xl text-slate-700 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/10 transition-all">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="resumen-horario-container" class="hidden bg-slate-50 border border-slate-100 rounded-2xl p-4 flex items-start gap-3 transition-all duration-300">
+                            <div class="flex-1">
+                                <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wide mb-1">Resumen de la programación</h4>
+                                <p id="txt-resumen-horario" class="text-sm text-slate-500 leading-relaxed"></p>
+                            </div>
+                        </div>
+
+                        <div id="same-day-warning" class="hidden bg-amber-50 border border-amber-100 rounded-2xl p-4 flex items-start gap-3">
+                            <div class="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 font-black">!</div>
+                            <div class="min-w-0">
+                                <div class="text-sm font-bold text-amber-900">Ya tienes un acompañamiento ese día</div>
+                                <div id="same-day-warning-text" class="text-xs text-amber-800 mt-1 leading-relaxed"></div>
+                            </div>
+                        </div>
+
+                        <div class="mb-1">
+                            <label for="buscar_ubicacion" class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Dirección de Recogida (Google Maps)</label>
+                            <div class="relative flex items-center mb-3">
+                                <span class="absolute left-3.5 text-rose-500 pointer-events-none">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                        <path d="M12 21s7-4.5 7-11a7 7 0 0 0-14 0c0 6.5 7 11 7 11Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                                        <circle cx="12" cy="10" r="2.5" stroke="currentColor" stroke-width="1.8"/>
+                                    </svg>
+                                </span>
+                                <input type="text" id="buscar_ubicacion" name="direccion_texto" placeholder="Busca un barrio o haz clic directo en el mapa..." autocomplete="off" required class="w-full pl-10 pr-28 py-2.5 text-sm bg-slate-50 border border-slate-100 rounded-xl text-slate-700 placeholder-slate-400 focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-500/10 transition-all">
+                                <button type="button" id="btn-detectar-gps" class="absolute right-2 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 rounded-lg text-xs font-bold transition-all flex items-center gap-1">
+                                    Mi Ubicación
+                                </button>
+                            </div>
+
+                            <input type="hidden" id="ubicacion_lat" name="latitud">
+                            <input type="hidden" id="ubicacion_lng" name="longitud">
+                            <input type="hidden" id="ubicacion_url" name="google_maps_url">
+                            <input type="hidden" id="ciudad" name="ciudad" value="{{ perfil.ciudad|default:'' }}">
+
+                            <div id="map_preview" class="w-full rounded-2xl border border-slate-100 shadow-inner mt-3" style="height: 250px; min-height: 250px;"></div>
+                        </div>
+                    </div>
+
+                    <div class="p-6 border-t border-slate-50 bg-slate-50/50 flex justify-end gap-3 rounded-b-[2rem] shrink-0">
+                        <button type="button" onclick="closeAccompanimentModal()" class="px-5 py-2.5 text-sm font-semibold text-slate-500 hover:bg-slate-100 rounded-xl transition-all">
+                            Cancelar
+                        </button>
+                        <button type="submit" id="btn-crear-peticion" class="px-5 py-2.5 text-sm font-bold bg-emerald-950 hover:bg-emerald-900 text-white rounded-xl transition-all shadow-md active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed">
+                            Crear solicitud
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-sos" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[110] hidden flex items-center justify-center p-4">
+        <div class="bg-gradient-to-b from-white to-rose-50/40 rounded-3xl p-8 max-w-md w-full shadow-2xl border border-rose-200/60 text-center transform transition-all scale-95 opacity-0 duration-300" id="sos-modal-card">
+            <div class="w-20 h-20 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-6 relative ring-1 ring-rose-200/60">
+                <span class="absolute inset-0 rounded-full bg-rose-400/20 animate-ping"></span>
+                <span class="relative z-10 text-rose-600">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 9v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M12 17h.01" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                        <path d="M10.3 4.3 3 20h18L13.7 4.3a2 2 0 0 0-3.4 0Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                    </svg>
+                </span>
+            </div>
+
+            <h3 class="text-2xl font-black text-rose-700 mb-2 tracking-tight">Alerta de Emergencia SOS</h3>
+            <p class="text-slate-600 text-sm mb-6 leading-relaxed">
+                Estamos notificando tu ubicación y el contexto del servicio al equipo de despacho de Assist Care y a tu contacto de emergencia designado.
+            </p>
+
+            <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden mb-6 hidden" id="sos-loading-bar-container">
+                <div class="bg-rose-500 h-full w-0 transition-all duration-1000 ease-out" id="sos-loading-bar"></div>
+            </div>
+
+            <div class="bg-rose-50/60 rounded-2xl p-4 mb-6 border border-rose-100/70 text-left">
+                <p class="text-[10px] font-bold text-rose-700 uppercase tracking-widest mb-1.5">Primer Respondiente Notificado</p>
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-white border border-rose-200/60 flex items-center justify-center text-rose-600 shadow-sm">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.08 4.2 2 2 0 0 1 4.06 2h3a2 2 0 0 1 2 1.72c.12.86.3 1.7.54 2.52a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.56-1.06a2 2 0 0 1 2.11-.45c.82.24 1.66.42 2.52.54A2 2 0 0 1 22 16.92Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p id="sos-target-name" class="text-sm font-bold text-slate-900">Central Integrada Assist</p>
+                        <p id="sos-target-phone" class="text-xs text-slate-600 mt-0.5">Línea de despacho de emergencia</p>
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" id="btn-cancelar-sos" class="w-full py-3 bg-white border border-rose-600 hover:bg-rose-50 text-rose-700 rounded-xl font-bold text-sm transition-all active:scale-95 shadow-sm">
+                Desactivar Alerta de Emergencia
+            </button>
+        </div>
+    </div>
+
+    <div id="custom-success-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[150] hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-[2rem] p-8 max-w-sm w-full shadow-2xl transform transition-all scale-95 opacity-0 duration-300" id="success-modal-card">
+            <div id="success-modal-icon-success" class="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-5">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+            </div>
+            <div id="success-modal-icon-warning" class="w-16 h-16 bg-amber-50 rounded-full hidden items-center justify-center mx-auto mb-5">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-amber-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 17h.01" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.3 4.3 3 20h18L13.7 4.3a2 2 0 0 0-3.4 0Z" />
+                </svg>
+            </div>
+            <h3 id="success-modal-title" class="text-xl font-bold text-slate-800 text-center mb-1">Notificación</h3>
+            <p id="success-modal-message" class="text-slate-500 text-center text-sm mb-6 leading-relaxed">
+                El contacto de emergencia ha sido almacenado de manera segura en la base de datos.
+            </p>
+            <button type="button" id="close-success-modal" class="w-full py-3 rounded-xl font-bold text-sm transition-all active:scale-95 shadow-md">
+                Entendido
+            </button>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            const modal = document.getElementById('peticionModal');
+            const focusableSelector = 'button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])';
+            let lastActive = null;
+
+            window.openPeticionModal = function () {
+                if (!modal) return;
+                lastActive = document.activeElement;
+                modal.classList.remove('hidden');
+                modal.setAttribute('aria-hidden', 'false');
+                const first = modal.querySelector('#titulo');
+                if (first) first.focus();
+                document.body.style.overflow = 'hidden';
+                window.setTimeout(() => {
+                    if (window.google && google.maps && window.__axiusPeticionMap) {
+                        google.maps.event.trigger(window.__axiusPeticionMap, 'resize');
+                        const markerPosition = window.__axiusPeticionMarker && window.__axiusPeticionMarker.getPosition
+                            ? window.__axiusPeticionMarker.getPosition()
+                            : null;
+                        if (markerPosition) window.__axiusPeticionMap.setCenter(markerPosition);
+                    }
+                }, 180);
+            };
+
+            window.closePeticionModal = function () {
+                if (!modal) return;
+                modal.classList.add('hidden');
+                modal.setAttribute('aria-hidden', 'true');
+                document.body.style.overflow = '';
+                if (lastActive && lastActive.focus) lastActive.focus();
+            };
+
+            window.openAccompanimentModal = window.openPeticionModal;
+            window.closeAccompanimentModal = window.closePeticionModal;
+
+            window.setRating = function (solicitudId, valor) {
+                const container = document.getElementById(`stars-${solicitudId}`);
+                const input = document.getElementById(`input-rating-${solicitudId}`);
+                const form = document.getElementById(`form-calificar-${solicitudId}`);
+                if (!container || !input || !form) return;
+
+                input.value = String(valor);
+                container.querySelectorAll('[data-star]').forEach((el) => {
+                    const starVal = Number(el.getAttribute('data-star'));
+                    el.classList.toggle('text-amber-500', starVal <= valor);
+                    el.classList.toggle('text-gray-300', starVal > valor);
+                });
+
+                if (form.requestSubmit) form.requestSubmit();
+                else form.submit();
+            };
+
+            if (modal) {
+                modal.addEventListener('click', (e) => {
+                    const backdrop = modal.firstElementChild;
+                    if (e.target === backdrop) window.closePeticionModal();
+                });
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && !modal.classList.contains('hidden')) window.closePeticionModal();
+                    if (e.key !== 'Tab' || modal.classList.contains('hidden')) return;
+                    const focusable = Array.from(modal.querySelectorAll(focusableSelector)).filter((el) => !el.hasAttribute('disabled'));
+                    if (!focusable.length) return;
+                    const first = focusable[0];
+                    const last = focusable[focusable.length - 1];
+                    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+                    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+                });
+            }
+
+            const peticionForm = document.getElementById('form-peticion-acompanamiento');
+            const peticionBtn = document.getElementById('btn-crear-peticion');
+            if (peticionForm && peticionBtn) {
+                peticionForm.addEventListener('submit', function () {
+                    if (peticionBtn.disabled) return;
+                    peticionBtn.disabled = true;
+                    peticionBtn.textContent = 'Procesando...';
+                });
+            }
+        })();
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const botones = document.querySelectorAll('[data-tab-paciente]');
+            const contenidos = document.querySelectorAll('.tab-content-paciente');
+
+            const params = new URLSearchParams(window.location.search);
+            const initialTab = (params.get('tab') || '').trim();
+            if (initialTab) {
+                const activePane = document.getElementById(`pane-${initialTab}`);
+                if (activePane) {
+                    contenidos.forEach(pane => pane.classList.add('hidden'));
+                    activePane.classList.remove('hidden');
+                    botones.forEach(btn => {
+                        const key = (btn.getAttribute('data-tab-paciente') || '').trim();
+                        if (key === initialTab) {
+                            btn.classList.remove('text-slate-600', 'hover:bg-emerald-50');
+                            btn.classList.add('bg-emerald-400', 'text-slate-900', 'font-semibold');
+                        } else {
+                            btn.classList.remove('bg-emerald-400', 'text-slate-900', 'font-semibold');
+                            btn.classList.add('text-slate-600', 'hover:bg-emerald-50');
+                        }
+                    });
+                    if (window.__axiusUpdateTabA11y) window.__axiusUpdateTabA11y(initialTab);
+                }
+            }
+
+            botones.forEach(boton => {
+                boton.addEventListener('click', function() {
+                    const targetTab = this.getAttribute('data-tab-paciente');
+
+                    contenidos.forEach(pane => pane.classList.add('hidden'));
+
+                    const activePane = document.getElementById(`pane-${targetTab}`);
+                    if (activePane) {
+                        activePane.classList.remove('hidden');
+                    }
+
+                    botones.forEach(btn => {
+                        btn.classList.remove('bg-emerald-400', 'text-slate-900', 'font-semibold');
+                        btn.classList.add('text-slate-600', 'hover:bg-emerald-50');
+                    });
+
+                    this.classList.remove('text-slate-600', 'hover:bg-emerald-50');
+                    this.classList.add('bg-emerald-400', 'text-slate-900', 'font-semibold');
+
+                    if (window.__axiusUpdateTabA11y) window.__axiusUpdateTabA11y(targetTab);
+                });
+            });
+        });
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const notificationBell = document.getElementById('notification-bell');
+            const notificationDropdownMobile = document.getElementById('notification-panel-mobile');
+            const notificationContainer = notificationBell ? notificationBell.closest('.relative.inline-block') : null;
+            if (!notificationBell || !notificationDropdownMobile || !notificationContainer) return;
+
+            function setNotificationState(isOpen) {
+                notificationBell.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                notificationDropdownMobile.classList.toggle('hidden', !isOpen);
+            }
+
+            notificationBell.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const isOpen = !notificationDropdownMobile.classList.contains('hidden');
+                setNotificationState(!isOpen);
+            });
+
+            notificationDropdownMobile.addEventListener('click', function (e) {
+                e.stopPropagation();
+            });
+
+            document.addEventListener('click', function (e) {
+                if (notificationContainer.contains(e.target)) return;
+                setNotificationState(false);
+            });
+
+            document.addEventListener('keydown', function (e) {
+                if (e.key !== 'Escape') return;
+                setNotificationState(false);
+            });
+        });
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const switchLector = document.getElementById('switch-lector-pantalla');
+            if (!switchLector) return;
+
+            function getActiveTabKey() {
+                const activeBtn = document.querySelector('[data-tab-paciente].bg-emerald-400');
+                if (activeBtn) return activeBtn.getAttribute('data-tab-paciente');
+                const activePane = Array.from(document.querySelectorAll('.tab-content-paciente')).find((p) => !p.classList.contains('hidden'));
+                if (activePane) return (activePane.id || '').replace(/^pane-/, '');
+                return 'dashboard';
+            }
+
+            function updateTabAriaSelected(activeKey) {
+                const buttons = document.querySelectorAll('[data-tab-paciente]');
+                buttons.forEach((btn) => {
+                    const key = btn.getAttribute('data-tab-paciente') || '';
+                    btn.setAttribute('role', 'tab');
+                    btn.setAttribute('aria-selected', key === activeKey ? 'true' : 'false');
+                });
+                const tablist = document.querySelector('nav[aria-label="Navegación de cuenta"]');
+                if (tablist) tablist.setAttribute('role', 'tablist');
+            }
+
+            function optimizarAccesibilidad(activo) {
+                const sidebarButtons = document.querySelectorAll('[data-tab-paciente]');
+                const botonEmergencia = document.getElementById('btn-soporte-emergencia');
+                const buscador = document.getElementById('buscador-secciones');
+                const sidebar = document.querySelector('aside');
+
+                if (activo) {
+                    document.body.setAttribute('aria-busy', 'false');
+                    if (buscador) buscador.setAttribute('aria-label', 'Buscador inteligente de secciones médicas');
+                    if (botonEmergencia) botonEmergencia.setAttribute('aria-label', 'Botón crítico: Solicitar Soporte de Emergencia Médico inmediato');
+
+                    sidebarButtons.forEach((btn) => {
+                        const nombreTab = (btn.getAttribute('data-tab-paciente') || '').trim();
+                        btn.setAttribute('aria-label', `Ir a sección ${nombreTab}`);
+                    });
+
+                    if (sidebar) {
+                        sidebar.querySelectorAll('svg').forEach((svg) => svg.setAttribute('aria-hidden', 'true'));
+                    }
+
+                    updateTabAriaSelected(getActiveTabKey());
+                } else {
+                    document.body.removeAttribute('aria-busy');
+                    if (buscador) buscador.removeAttribute('aria-label');
+                    if (botonEmergencia) botonEmergencia.removeAttribute('aria-label');
+                    sidebarButtons.forEach((btn) => {
+                        btn.removeAttribute('aria-label');
+                        btn.removeAttribute('role');
+                        btn.removeAttribute('aria-selected');
+                    });
+                    const tablist = document.querySelector('nav[aria-label="Navegación de cuenta"]');
+                    if (tablist) tablist.removeAttribute('role');
+                }
+            }
+
+            window.optimizarAccesibilidad = optimizarAccesibilidad;
+            window.__axiusUpdateTabA11y = function (activeKey) {
+                const enabled = localStorage.getItem('lectorPantalla') === 'true';
+                if (!enabled) return;
+                updateTabAriaSelected(activeKey || getActiveTabKey());
+            };
+
+            switchLector.addEventListener('change', function () {
+                localStorage.setItem('lectorPantalla', this.checked ? 'true' : 'false');
+                optimizarAccesibilidad(this.checked);
+            });
+
+            const estadoGuardado = localStorage.getItem('lectorPantalla') === 'true';
+            switchLector.checked = estadoGuardado;
+            optimizarAccesibilidad(estadoGuardado);
+        });
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const switchContraste = document.getElementById('switch-alto-contraste');
+            if (!switchContraste) return;
+
+            function aplicarAltoContraste(activo) {
+                if (activo) document.body.classList.add('alto-contraste');
+                else document.body.classList.remove('alto-contraste');
+            }
+
+            switchContraste.addEventListener('change', function() {
+                localStorage.setItem('altoContraste', this.checked ? 'true' : 'false');
+                aplicarAltoContraste(this.checked);
+            });
+
+            const contrasteGuardado = localStorage.getItem('altoContraste') === 'true';
+            switchContraste.checked = contrasteGuardado;
+            aplicarAltoContraste(contrasteGuardado);
+        });
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const switchSimplificado = document.getElementById('switch-navegacion-simplificada');
+            if (!switchSimplificado) return;
+
+            function aplicarNavegacionSimplificada(activo) {
+                if (activo) document.body.classList.add('navegacion-simplificada');
+                else document.body.classList.remove('navegacion-simplificada');
+            }
+
+            switchSimplificado.addEventListener('change', function() {
+                localStorage.setItem('navegacionSimplificada', this.checked ? 'true' : 'false');
+                aplicarNavegacionSimplificada(this.checked);
+            });
+
+            const simplificadoGuardado = localStorage.getItem('navegacionSimplificada') === 'true';
+            switchSimplificado.checked = simplificadoGuardado;
+            aplicarNavegacionSimplificada(simplificadoGuardado);
+        });
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const formEmergencia = document.getElementById('form-emergencia');
+            const btnSosTriggers = Array.from(document.querySelectorAll('[data-emergency-support-url]'));
+            const btnPersonalSosList = [
+                document.getElementById('btn-personal-sos'),
+                document.getElementById('btn-personal-sos-mobile'),
+            ].filter(Boolean);
+            const modalSos = document.getElementById('modal-sos');
+            const sosCard = document.getElementById('sos-modal-card');
+            const btnCancelarSos = document.getElementById('btn-cancelar-sos');
+
+            const inputNombre = document.getElementById('input-emergencia-nombre');
+            const inputParentesco = document.getElementById('input-emergencia-parentesco');
+            const inputTelefono = document.getElementById('input-emergencia-telefono');
+
+            const loadingContainer = document.getElementById('sos-loading-bar-container');
+            const loadingBar = document.getElementById('sos-loading-bar');
+            const sosTargetName = document.getElementById('sos-target-name');
+            const sosTargetPhone = document.getElementById('sos-target-phone');
+
+            const successModal = document.getElementById('custom-success-modal');
+            const successCard = document.getElementById('success-modal-card');
+            const successTitleElement = document.getElementById('success-modal-title');
+            const successMessageElement = document.getElementById('success-modal-message');
+            const closeSuccessBtn = document.getElementById('close-success-modal');
+            const successIconSuccess = document.getElementById('success-modal-icon-success');
+            const successIconWarning = document.getElementById('success-modal-icon-warning');
+            const nombrePaciente = '{{ usuario.nombre_completo|default:usuario.email|escapejs }}';
+            let whatsappTimeoutId = null;
+
+            function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+                return '';
+            }
+
+            function normalizePhoneDigits(raw) {
+                const digits = String(raw || '').replace(/\D/g, '');
+                if (!digits) return '';
+                if (digits.startsWith('57') && digits.length >= 12) return digits.slice(2);
+                return digits;
+            }
+
+            function showSuccessModal(message, opts) {
+                if (!successModal || !successCard || !successMessageElement) return;
+                const options = opts && typeof opts === 'object' ? opts : {};
+                const variant = (options.variant || '').toString();
+                const title = (options.title || 'Notificación').toString();
+
+                if (successTitleElement) successTitleElement.innerText = title;
+                successMessageElement.innerText = message;
+
+                if (closeSuccessBtn) {
+                    closeSuccessBtn.classList.remove('bg-emerald-500', 'hover:bg-emerald-600', 'shadow-emerald-100');
+                    closeSuccessBtn.classList.remove('bg-slate-900', 'hover:bg-slate-800', 'shadow-slate-200');
+                    closeSuccessBtn.classList.remove('bg-rose-600', 'hover:bg-rose-700', 'shadow-rose-100');
+                    closeSuccessBtn.classList.add('text-white');
+                }
+
+                if (variant === 'warning') {
+                    if (successIconSuccess) successIconSuccess.classList.add('hidden');
+                    if (successIconWarning) successIconWarning.classList.remove('hidden');
+                    if (successIconWarning) successIconWarning.classList.add('flex');
+                    if (closeSuccessBtn) {
+                        closeSuccessBtn.classList.add('bg-slate-900', 'hover:bg-slate-800', 'shadow-slate-200');
+                    }
+                } else if (variant === 'danger') {
+                    if (successIconSuccess) successIconSuccess.classList.add('hidden');
+                    if (successIconWarning) successIconWarning.classList.remove('hidden');
+                    if (successIconWarning) successIconWarning.classList.add('flex');
+                    if (closeSuccessBtn) {
+                        closeSuccessBtn.classList.add('bg-rose-600', 'hover:bg-rose-700', 'shadow-rose-100');
+                    }
+                } else {
+                    if (successIconWarning) {
+                        successIconWarning.classList.add('hidden');
+                        successIconWarning.classList.remove('flex');
+                    }
+                    if (successIconSuccess) successIconSuccess.classList.remove('hidden');
+                    if (closeSuccessBtn) {
+                        closeSuccessBtn.classList.add('bg-emerald-500', 'hover:bg-emerald-600', 'shadow-emerald-100');
+                    }
+                }
+
+                successModal.classList.remove('hidden');
+                setTimeout(() => {
+                    successCard.classList.remove('scale-95', 'opacity-0');
+                    successCard.classList.add('scale-100', 'opacity-100');
+                }, 10);
+            }
+
+            function hideSuccessModal() {
+                if (!successModal || !successCard) return;
+                successCard.classList.add('scale-95', 'opacity-0');
+                successCard.classList.remove('scale-100', 'opacity-100');
+                setTimeout(() => {
+                    successModal.classList.add('hidden');
+                }, 300);
+            }
+
+            if (closeSuccessBtn) {
+                closeSuccessBtn.addEventListener('click', hideSuccessModal);
+            }
+            if (successModal) {
+                successModal.addEventListener('click', function (e) {
+                    if (e.target === successModal) hideSuccessModal();
+                });
+                document.addEventListener('keydown', function (e) {
+                    if (e.key === 'Escape' && !successModal.classList.contains('hidden')) hideSuccessModal();
+                });
+            }
+
+            function openSosModal() {
+                if (!modalSos || !sosCard) return;
+                modalSos.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+                setTimeout(() => {
+                    sosCard.classList.remove('scale-95', 'opacity-0');
+                    sosCard.classList.add('scale-100', 'opacity-100');
+                }, 10);
+            }
+
+            function closeSosModal() {
+                if (!modalSos || !sosCard) return;
+                if (whatsappTimeoutId) {
+                    window.clearTimeout(whatsappTimeoutId);
+                    whatsappTimeoutId = null;
+                }
+                sosCard.classList.add('scale-95', 'opacity-0');
+                sosCard.classList.remove('scale-100', 'opacity-100');
+                setTimeout(() => {
+                    modalSos.classList.add('hidden');
+                    document.body.style.overflow = '';
+                    if (loadingContainer) loadingContainer.classList.add('hidden');
+                    if (loadingBar) loadingBar.style.width = '0%';
+                }, 300);
+            }
+
+            if (formEmergencia && inputNombre && inputParentesco && inputTelefono) {
+                const lsNombre = localStorage.getItem('contEmergenciaNombre') || '';
+                const lsParentesco = localStorage.getItem('contEmergenciaParentesco') || '';
+                const lsTelefono = localStorage.getItem('contEmergenciaTelefono') || '';
+
+                inputNombre.value = (lsNombre || inputNombre.value || '').trim();
+                inputParentesco.value = (lsParentesco || inputParentesco.value || '').trim();
+                inputTelefono.value = normalizePhoneDigits(lsTelefono || inputTelefono.value || '');
+
+                formEmergencia.addEventListener('submit', function (e) {
+                    e.preventDefault();
+
+                    const nom = (inputNombre.value || '').trim();
+                    const par = (inputParentesco.value || '').trim();
+                    const telDigits = normalizePhoneDigits(inputTelefono.value || '');
+                    const tel = telDigits ? `+57${telDigits}` : '';
+
+                    localStorage.setItem('contEmergenciaNombre', nom);
+                    localStorage.setItem('contEmergenciaParentesco', par);
+                    localStorage.setItem('contEmergenciaTelefono', telDigits);
+
+                    fetch('/dashboard/patient/update-emergency-contact/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookie('csrftoken') || '{{ csrf_token }}',
+                        },
+                        body: JSON.stringify({
+                            name: nom,
+                            relationship: par,
+                            phone: tel,
+                        }),
+                    })
+                        .then((response) => response.json())
+                        .then((data) => {
+                            if (data.status === 'success') {
+                                showSuccessModal(
+                                    'La información del contacto de emergencia se actualizó correctamente.',
+                                    { title: 'Contacto actualizado', variant: 'success' }
+                                );
+                            } else {
+                                showSuccessModal(
+                                    `No se pudo guardar el contacto: ${(data.message || 'Error desconocido')}`,
+                                    { title: 'No se pudo guardar', variant: 'danger' }
+                                );
+                            }
+                        })
+                        .catch((error) => console.error('Error syncing with Django backend:', error));
+                });
+            }
+
+            if (btnSosTriggers.length && modalSos && sosCard && sosTargetName && sosTargetPhone) {
+                btnSosTriggers.forEach((btnSos) => {
+                    btnSos.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        if (btnSos.dataset.loading === 'true') return;
+
+                        const endpointUrl = btnSos.dataset.emergencySupportUrl || btnSos.getAttribute('href') || '';
+                        if (!endpointUrl || endpointUrl === '#') return;
+
+                        const originalLabel = btnSos.dataset.originalLabel || btnSos.innerHTML;
+                        btnSos.dataset.originalLabel = originalLabel;
+                        btnSos.dataset.loading = 'true';
+                        btnSos.classList.add('opacity-80', 'pointer-events-none');
+                        btnSos.innerHTML = 'Enviando alerta institucional...';
+
+                    fetch(endpointUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRFToken': getCookie('csrftoken') || '{{ csrf_token }}',
+                        },
+                        body: JSON.stringify({ source: 'sidebar_emergency_support' }),
+                    })
+                        .then(async (response) => {
+                            const contentType = response.headers.get('content-type') || '';
+                            if (!contentType.includes('application/json')) {
+                                const text = await response.text();
+                                throw new Error(text || 'El servidor no devolvió una respuesta JSON válida.');
+                            }
+                            const data = await response.json();
+                            return { ok: response.ok, data };
+                        })
+                        .then(({ ok, data }) => {
+                            if (ok && data && data.status === 'success') {
+                                const delivery = (data.delivery || '').toString();
+                                const variant = delivery === 'failed' ? 'warning' : 'warning';
+                                const title = delivery === 'failed' ? 'Alerta registrada' : 'Alerta SOS enviada';
+                                showSuccessModal(
+                                    data.message || 'La alerta institucional fue procesada correctamente.',
+                                    { title, variant }
+                                );
+                                return;
+                            }
+                            showSuccessModal(
+                                (data && (data.message || data.error)) || 'No fue posible enviar la alerta institucional en este momento.',
+                                { title: 'No se pudo enviar la alerta', variant: 'danger' }
+                            );
+                        })
+                        .catch((err) => {
+                            showSuccessModal(
+                                String(err && err.message ? err.message : err) || 'No fue posible enviar la alerta institucional en este momento.',
+                                { title: 'No se pudo enviar la alerta', variant: 'danger' }
+                            );
+                        })
+                        .finally(() => {
+                            btnSos.dataset.loading = 'false';
+                            btnSos.classList.remove('opacity-80', 'pointer-events-none');
+                            btnSos.innerHTML = originalLabel;
+                        });
+                    });
+                });
+            }
+
+            if (btnPersonalSosList.length && modalSos && sosCard && sosTargetName && sosTargetPhone) {
+                btnPersonalSosList.forEach((btn) => btn.addEventListener('click', function (e) {
+                    e.preventDefault();
+
+                    const liveName = (inputNombre && inputNombre.value ? inputNombre.value : '').trim();
+                    const liveRel = (inputParentesco && inputParentesco.value ? inputParentesco.value : '').trim();
+                    const livePhoneDigits = normalizePhoneDigits(inputTelefono && inputTelefono.value ? inputTelefono.value : '');
+
+                    const savedName = localStorage.getItem('contEmergenciaNombre') || '';
+                    const savedRelationship = localStorage.getItem('contEmergenciaParentesco') || '';
+                    const savedPhoneDigits = normalizePhoneDigits(localStorage.getItem('contEmergenciaTelefono') || '');
+
+                    const nameToUse = liveName || savedName;
+                    const relToUse = liveRel || savedRelationship;
+                    const phoneToUse = livePhoneDigits || savedPhoneDigits;
+
+                    if (nameToUse && phoneToUse) {
+                        const relationshipText = relToUse ? `(${relToUse})` : '';
+                        sosTargetName.innerText = `${nameToUse} ${relationshipText}`.trim();
+                        sosTargetPhone.innerText = `Línea: +57 ${phoneToUse}`;
+                    } else {
+                        sosTargetName.innerText = 'Central Integrada Assist';
+                        sosTargetPhone.innerText = 'Línea de despacho de emergencia';
+                    }
+
+                    openSosModal();
+
+                    if (loadingContainer && loadingBar) {
+                        loadingContainer.classList.remove('hidden');
+                        loadingBar.style.width = '0%';
+                        setTimeout(() => {
+                            loadingBar.style.width = '100%';
+                        }, 100);
+                    }
+
+                    if (!phoneToUse) return;
+
+                    const telefonoSafe = normalizePhoneDigits(phoneToUse);
+                    const mensaje = `¡ALERTA SOS Assist Care! Soy ${nombrePaciente}. Estoy experimentando una emergencia médica. Mi ubicación actual e información clínica están disponibles en el sistema.`;
+                    const whatsappUrl = `https://api.whatsapp.com/send?phone=57${telefonoSafe}&text=${encodeURIComponent(mensaje)}`;
+
+                    whatsappTimeoutId = window.setTimeout(() => {
+                        window.open(whatsappUrl, '_blank', 'noopener');
+                        whatsappTimeoutId = null;
+                    }, 1500);
+                }));
+            }
+
+            if (btnCancelarSos) {
+                btnCancelarSos.addEventListener('click', function () {
+                    closeSosModal();
+                });
+            }
+
+            if (modalSos) {
+                modalSos.addEventListener('click', function (e) {
+                    if (e.target === modalSos) closeSosModal();
+                });
+                document.addEventListener('keydown', function (e) {
+                    if (e.key === 'Escape' && !modalSos.classList.contains('hidden')) closeSosModal();
+                });
+            }
+        });
+    </script>
+    <script>
+        (function () {
+            const overlay = document.getElementById('mobile-sidebar-overlay');
+            const drawer = document.getElementById('mobile-sidebar-drawer');
+            const openBtn = document.getElementById('btn-open-mobile-sidebar');
+            const closeBtn = document.getElementById('btn-close-mobile-sidebar');
+            const mobileBreakpoint = window.matchMedia('(min-width: 768px)');
+            const transitionMs = 300;
+            let closeTimer = null;
+            let isDrawerOpen = false;
+
+            if (!overlay || !drawer || !openBtn || !closeBtn) return;
+
+            function lockBodyScroll() {
+                if (document.body.dataset.mobileSidebarLocked === 'true') return;
+                document.body.dataset.mobileSidebarLocked = 'true';
+                document.body.dataset.mobileSidebarPrevOverflow = document.body.style.overflow || '';
+                document.body.style.overflow = 'hidden';
+            }
+
+            function unlockBodyScroll() {
+                if (document.body.dataset.mobileSidebarLocked !== 'true') return;
+                document.body.style.overflow = document.body.dataset.mobileSidebarPrevOverflow || '';
+                delete document.body.dataset.mobileSidebarPrevOverflow;
+                delete document.body.dataset.mobileSidebarLocked;
+            }
+
+            function syncAccessibilityState(open) {
+                openBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+                overlay.setAttribute('aria-hidden', open ? 'false' : 'true');
+                drawer.setAttribute('aria-hidden', open ? 'false' : 'true');
+            }
+
+            function openDrawer() {
+                if (isDrawerOpen || mobileBreakpoint.matches) return;
+
+                if (closeTimer) {
+                    window.clearTimeout(closeTimer);
+                    closeTimer = null;
+                }
+
+                isDrawerOpen = true;
+                overlay.classList.remove('hidden', 'pointer-events-none');
+                drawer.classList.remove('-translate-x-full');
+                drawer.classList.add('translate-x-0');
+                syncAccessibilityState(true);
+                lockBodyScroll();
+
+                window.requestAnimationFrame(() => {
+                    overlay.classList.add('opacity-100');
+                });
+            }
+
+            function closeDrawer(immediate = false) {
+                if (!isDrawerOpen && overlay.classList.contains('hidden')) return;
+
+                isDrawerOpen = false;
+                overlay.classList.remove('opacity-100');
+                overlay.classList.add('pointer-events-none');
+                drawer.classList.remove('translate-x-0');
+                drawer.classList.add('-translate-x-full');
+                syncAccessibilityState(false);
+                unlockBodyScroll();
+
+                if (closeTimer) {
+                    window.clearTimeout(closeTimer);
+                }
+
+                if (immediate) {
+                    overlay.classList.add('hidden');
+                    return;
+                }
+
+                closeTimer = window.setTimeout(() => {
+                    overlay.classList.add('hidden');
+                    closeTimer = null;
+                }, transitionMs);
+            }
+
+            openBtn.setAttribute('aria-expanded', 'false');
+
+            openBtn.addEventListener('click', function () {
+                if (isDrawerOpen) closeDrawer();
+                else openDrawer();
+            });
+
+            closeBtn.addEventListener('click', function () {
+                closeDrawer();
+            });
+
+            overlay.addEventListener('click', function () {
+                closeDrawer();
+            });
+
+            drawer.querySelectorAll('[data-tab-paciente]').forEach((btn) => {
+                btn.addEventListener('click', function () {
+                    closeDrawer();
+                });
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && isDrawerOpen) closeDrawer();
+            });
+
+            mobileBreakpoint.addEventListener('change', function (event) {
+                if (event.matches) closeDrawer(true);
+            });
+        })();
+    </script>
+    <script>
+        let map = null;
+        let marker = null;
+        let autocomplete = null;
+        const ibagueCoords = { lat: 4.4389, lng: -75.2322 };
+
+        function ensureMapResize() {
+            if (!map || !window.google || !google.maps) return;
+            window.setTimeout(() => {
+                google.maps.event.trigger(map, 'resize');
+                const currentPosition = marker && marker.getPosition ? marker.getPosition() : null;
+                map.setCenter(currentPosition || ibagueCoords);
+            }, 180);
+        }
+
+        function initMapSystem() {
+            const mapContainer = document.getElementById('map_preview');
+            if (!mapContainer || !window.google || !google.maps) return;
+
+            try {
+                if (map && marker) {
+                    ensureMapResize();
+                    return;
+                }
+
+                map = new google.maps.Map(mapContainer, {
+                    center: ibagueCoords,
+                    zoom: 14,
+                    disableDefaultUI: false,
+                    mapTypeControl: false,
+                    streetViewControl: false,
+                });
+
+                marker = new google.maps.Marker({
+                    position: ibagueCoords,
+                    map: map,
+                    draggable: true,
+                    animation: google.maps.Animation.DROP,
+                });
+
+                window.__axiusPeticionMap = map;
+                window.__axiusPeticionMarker = marker;
+
+                const inputLat = document.getElementById('ubicacion_lat');
+                const inputLng = document.getElementById('ubicacion_lng');
+                const inputUrl = document.getElementById('ubicacion_url');
+                if (inputLat) inputLat.value = String(ibagueCoords.lat);
+                if (inputLng) inputLng.value = String(ibagueCoords.lng);
+                if (inputUrl) inputUrl.value = `https://www.google.com/maps/?q=${ibagueCoords.lat},${ibagueCoords.lng}`;
+
+                map.addListener('click', function (e) {
+                    if (!e.latLng) return;
+                    updateLocationMetrics(e.latLng.lat(), e.latLng.lng());
+                });
+
+                marker.addListener('dragend', function () {
+                    const position = marker.getPosition();
+                    if (!position) return;
+                    updateLocationMetrics(position.lat(), position.lng());
+                });
+
+                initAutocompleteEngine();
+                ensureMapResize();
+            } catch (error) {
+                console.error('Google Maps setup critical exception:', error);
+            }
+        }
+
+        function initAutocompleteEngine() {
+            const input = document.getElementById('buscar_ubicacion');
+            if (!input || !window.google || !google.maps || !google.maps.places || autocomplete) return;
+
+            autocomplete = new google.maps.places.Autocomplete(input, {
+                componentRestrictions: { country: 'co' },
+                fields: ['geometry', 'name', 'url', 'formatted_address'],
+            });
+
+            autocomplete.addListener('place_changed', function () {
+                const place = autocomplete.getPlace();
+                if (!place || !place.geometry || !place.geometry.location || !map || !marker) return;
+
+                const targetLat = place.geometry.location.lat();
+                const targetLng = place.geometry.location.lng();
+
+                map.setCenter({ lat: targetLat, lng: targetLng });
+                map.setZoom(16);
+                marker.setPosition({ lat: targetLat, lng: targetLng });
+
+                const inputLat = document.getElementById('ubicacion_lat');
+                const inputLng = document.getElementById('ubicacion_lng');
+                const inputUrl = document.getElementById('ubicacion_url');
+                if (inputLat) inputLat.value = String(targetLat);
+                if (inputLng) inputLng.value = String(targetLng);
+                if (inputUrl) inputUrl.value = place.url || `https://www.google.com/maps/?q=${targetLat},${targetLng}`;
+            });
+        }
+
+        function updateLocationMetrics(lat, lng) {
+            if (!map || !marker || !window.google || !google.maps) return;
+
+            const targetCoords = { lat: lat, lng: lng };
+            marker.setPosition(targetCoords);
+            map.panTo(targetCoords);
+
+            const inputLat = document.getElementById('ubicacion_lat');
+            const inputLng = document.getElementById('ubicacion_lng');
+            const inputUrl = document.getElementById('ubicacion_url');
+            if (inputLat) inputLat.value = String(lat);
+            if (inputLng) inputLng.value = String(lng);
+            if (inputUrl) inputUrl.value = `https://www.google.com/maps/?q=${lat},${lng}`;
+
+            const geocoder = new google.maps.Geocoder();
+            geocoder.geocode({ location: targetCoords }, function (results, status) {
+                if (status === 'OK' && results && results[0]) {
+                    const inputBuscar = document.getElementById('buscar_ubicacion');
+                    if (inputBuscar) inputBuscar.value = results[0].formatted_address;
+                }
+            });
+        }
+
+        function actualizarResumenHorario() {
+            const fechaEl = document.getElementById('fecha_servicio');
+            const horaInicioEl = document.getElementById('hora_inicio');
+            const horaFinEl = document.getElementById('hora_fin');
+            const container = document.getElementById('resumen-horario-container');
+            const txtResumen = document.getElementById('txt-resumen-horario');
+            const submitBtn = document.getElementById('btn-crear-peticion');
+
+            if (!fechaEl || !horaInicioEl || !horaFinEl || !container || !txtResumen) return;
+
+            const fecha = fechaEl.value;
+            const inicio = horaInicioEl.value;
+            const fin = horaFinEl.value;
+
+            if (!fecha || !inicio || !fin) {
+                container.classList.add('hidden');
+                if (submitBtn) submitBtn.disabled = false;
+                return;
+            }
+
+            const datetimeInicio = new Date(`${fecha}T${inicio}`);
+            const datetimeFin = new Date(`${fecha}T${fin}`);
+            const now = new Date();
+            const diffMs = datetimeFin - datetimeInicio;
+            const diffHours = diffMs / (1000 * 60 * 60);
+
+            container.classList.remove('hidden');
+
+            if (datetimeInicio <= now) {
+                container.classList.remove('bg-slate-50', 'border-slate-100');
+                container.classList.add('bg-rose-50', 'border-rose-100');
+                txtResumen.innerHTML = '<span class="text-rose-600 font-bold">La fecha y hora de inicio deben ser posteriores al momento actual.</span>';
+                if (submitBtn) submitBtn.disabled = true;
+                return;
+            }
+
+            if (diffMs <= 0) {
+                container.classList.remove('bg-slate-50', 'border-slate-100');
+                container.classList.add('bg-rose-50', 'border-rose-100');
+                txtResumen.innerHTML = '<span class="text-rose-600 font-bold">La hora de fin debe ser posterior a la hora de inicio.</span>';
+                if (submitBtn) submitBtn.disabled = true;
+                return;
+            }
+
+            if (diffHours > 4) {
+                container.classList.remove('bg-slate-50', 'border-slate-100');
+                container.classList.add('bg-rose-50', 'border-rose-100');
+
+                const maxFinHours = new Date(datetimeInicio.getTime() + (4 * 60 * 60 * 1000));
+                const maxFinStr = maxFinHours.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: true });
+                const inicioStr = datetimeInicio.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+                txtResumen.innerHTML = `<span class="text-rose-600 font-bold">El servicio no puede superar las 4 horas.</span><br><span class="text-xs text-rose-500">Si inicia a las ${inicioStr}, su hora máxima permitida es hasta las <strong>${maxFinStr}</strong>.</span>`;
+                if (submitBtn) submitBtn.disabled = true;
+                return;
+            }
+
+            const optionsDate = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const optionsTime = { hour: '2-digit', minute: '2-digit', hour12: true };
+
+            container.classList.remove('bg-rose-50', 'border-rose-100');
+            container.classList.add('bg-slate-50', 'border-slate-100');
+            if (submitBtn) submitBtn.disabled = false;
+
+            const strFecha = datetimeInicio.toLocaleDateString('es-CO', optionsDate);
+            const strHoraInicio = datetimeInicio.toLocaleTimeString('es-CO', optionsTime);
+            const strHoraFin = datetimeFin.toLocaleTimeString('es-CO', optionsTime);
+
+            let duracionStr = '';
+            const totalHours = Math.floor(diffHours);
+            const totalMinutes = Math.round((diffHours - totalHours) * 60);
+            if (totalHours > 0) duracionStr += `${totalHours} ${totalHours === 1 ? 'hora' : 'horas'}`;
+            if (totalMinutes > 0) duracionStr += `${duracionStr ? ' y ' : ''}${totalMinutes} min`;
+            if (!duracionStr) duracionStr = '0 min';
+
+            txtResumen.innerHTML = `Su servicio está programado para el <strong class="text-slate-700">${strFecha}</strong>.<br>Inicia a las <strong class="text-slate-700">${strHoraInicio}</strong> y finaliza a las <strong class="text-slate-700">${strHoraFin}</strong>.<br><span class="inline-block mt-2 text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full">Duración total: ${duracionStr} (Válido)</span>`;
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const gpsBtn = document.getElementById('btn-detectar-gps');
+            const form = document.getElementById('form-peticion-acompanamiento');
+            const inputBuscar = document.getElementById('buscar_ubicacion');
+            const fechaEl = document.getElementById('fecha_servicio');
+            const horaInicioEl = document.getElementById('hora_inicio');
+            const horaFinEl = document.getElementById('hora_fin');
+
+            function pad2(n) {
+                return String(n).padStart(2, '0');
+            }
+
+            function setSchedulingMinimums() {
+                const now = new Date();
+                const today = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
+                const nowTime = `${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
+
+                if (fechaEl) fechaEl.min = today;
+
+                if (fechaEl && horaInicioEl) {
+                    if ((fechaEl.value || '') === today) horaInicioEl.min = nowTime;
+                    else horaInicioEl.removeAttribute('min');
+                }
+
+                if (horaFinEl && horaInicioEl && horaInicioEl.value) horaFinEl.min = horaInicioEl.value;
+            }
+
+            ['fecha_servicio', 'hora_inicio', 'hora_fin'].forEach((id) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.addEventListener('input', actualizarResumenHorario);
+                el.addEventListener('change', actualizarResumenHorario);
+            });
+            ['fecha_servicio', 'hora_inicio', 'hora_fin'].forEach((id) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.addEventListener('input', setSchedulingMinimums);
+                el.addEventListener('change', setSchedulingMinimums);
+            });
+            setSchedulingMinimums();
+            actualizarResumenHorario();
+
+            const sameDayWarning = document.getElementById('same-day-warning');
+            const sameDayWarningText = document.getElementById('same-day-warning-text');
+            const submitBtn = document.getElementById('btn-crear-peticion');
+            let occupiedDays = new Set();
+            try {
+                const raw = document.getElementById('occupied-days-json')?.textContent || '[]';
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed)) {
+                    occupiedDays = new Set(
+                        parsed
+                            .map((x) => String(x || '').trim())
+                            .filter(Boolean)
+                    );
+                }
+            } catch (e) {
+                occupiedDays = new Set();
+            }
+
+            function syncSameDayWarning() {
+                const fechaEl = document.getElementById('fecha_servicio');
+                const selected = (fechaEl ? fechaEl.value : '') || '';
+                const hasDuplicate = Boolean(selected && occupiedDays.has(selected));
+
+                if (sameDayWarning) sameDayWarning.classList.toggle('hidden', !hasDuplicate);
+                if (sameDayWarningText) {
+                    sameDayWarningText.textContent = hasDuplicate
+                        ? `Para mantener la calidad del servicio, solo puedes crear una solicitud por día. Selecciona una fecha posterior a ${selected.split('-').reverse().join('/')}.`
+                        : '';
+                }
+
+                if (submitBtn) {
+                    if (hasDuplicate) {
+                        submitBtn.disabled = true;
+                    } else {
+                        submitBtn.disabled = false;
+                        actualizarResumenHorario();
+                    }
+                }
+            }
+
+            if (fechaEl) {
+                fechaEl.addEventListener('input', syncSameDayWarning);
+                fechaEl.addEventListener('change', syncSameDayWarning);
+            }
+            syncSameDayWarning();
+
+            if (gpsBtn) {
+                gpsBtn.addEventListener('click', function () {
+                    const btn = this;
+                    if (!navigator.geolocation) {
+                        alert('Tu dispositivo o navegador no soporta geolocalización en vivo.');
+                        return;
+                    }
+
+                    btn.innerText = 'Buscando...';
+                    btn.disabled = true;
+
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            const deviceLat = position.coords.latitude;
+                            const deviceLng = position.coords.longitude;
+
+                            if (!map) initMapSystem();
+                            if (map) map.setZoom(17);
+                            updateLocationMetrics(deviceLat, deviceLng);
+
+                            btn.innerText = 'Mi Ubicación';
+                            btn.disabled = false;
+                        },
+                        (error) => {
+                            console.warn('GPS tracking error context code:', error);
+                            alert('No se pudo obtener la señal GPS en tiempo real. Por favor selecciona tu ubicación tocando directamente el mapa.');
+                            btn.innerText = 'Mi Ubicación';
+                            btn.disabled = false;
+                        },
+                        { enableHighAccuracy: true, timeout: 9000 }
+                    );
+                });
+            }
+
+            if (form) {
+                form.addEventListener(
+                    'submit',
+                    function (e) {
+                        const inputLat = document.getElementById('ubicacion_lat');
+                        const fechaEl = document.getElementById('fecha_servicio');
+                        const horaInicioEl = document.getElementById('hora_inicio');
+                        const horaFinEl = document.getElementById('hora_fin');
+
+                        if (horaInicioEl) horaInicioEl.setCustomValidity('');
+                        if (horaFinEl) horaFinEl.setCustomValidity('');
+
+                        if (inputLat && !inputLat.value) {
+                            if (inputBuscar) {
+                                inputBuscar.setCustomValidity('Selecciona tu ubicación usando el buscador, GPS o el mapa.');
+                                inputBuscar.reportValidity();
+                                inputBuscar.setCustomValidity('');
+                            }
+                            e.preventDefault();
+                            e.stopImmediatePropagation();
+                            return;
+                        }
+
+                        if (!fechaEl || !horaInicioEl || !horaFinEl) return;
+                        if (!fechaEl.value || !horaInicioEl.value || !horaFinEl.value) return;
+
+                        const start = new Date(`${fechaEl.value}T${horaInicioEl.value}`);
+                        const end = new Date(`${fechaEl.value}T${horaFinEl.value}`);
+                        const diffMs = end - start;
+                        const diffHours = diffMs / (1000 * 60 * 60);
+                        if (diffMs <= 0) {
+                            horaFinEl.setCustomValidity('La hora de finalización debe ser posterior al inicio.');
+                            horaFinEl.reportValidity();
+                            horaFinEl.setCustomValidity('');
+                            e.preventDefault();
+                            e.stopImmediatePropagation();
+                            return;
+                        }
+                        if (diffHours > 4) {
+                            horaFinEl.setCustomValidity('El servicio no puede superar las 4 horas.');
+                            horaFinEl.reportValidity();
+                            horaFinEl.setCustomValidity('');
+                            e.preventDefault();
+                            e.stopImmediatePropagation();
+                        }
+                    },
+                    true
+                );
+            }
+
+            if (typeof google !== 'undefined' && google.maps) {
+                initMapSystem();
+            }
+        });
+    </script>
+    {% if GOOGLE_MAPS_API_KEY %}
+    <script src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY|urlencode }}&libraries=places&callback=initMapSystem" async defer></script>
+    {% else %}
+    <script>
+        console.error('Google Maps API key is missing. Set GOOGLE_MAPS_API_KEY in your environment.');
+    </script>
+    {% endif %}
+
+    <div id="modal-perfil-enfermero" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[200] hidden items-center justify-center p-4">
+        <div id="modal-perfil-enfermero-card" class="w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden transform transition-all duration-200 scale-95 opacity-0">
+            <div class="px-6 py-5 border-b border-slate-100 flex items-start justify-between gap-4">
+                <div>
+                    <h3 class="text-base font-bold text-slate-800 tracking-tight">Perfil profesional</h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Información del personal postulado</p>
+                </div>
+                <button type="button" id="btn-cerrar-modal-perfil-enfermero" class="text-xs font-semibold text-slate-400 hover:text-slate-600 transition-colors">
+                    Cerrar
+                </button>
+            </div>
+            <div class="p-6">
+                <div class="flex items-start gap-4">
+                    <div class="w-16 h-16 rounded-2xl border border-slate-200/80 bg-slate-100 overflow-hidden shrink-0" id="perfil-enfermero-foto-wrap">
+                        <img id="perfil-enfermero-foto" alt="Foto profesional" class="w-full h-full object-cover hidden">
+                        <div id="perfil-enfermero-foto-fallback" class="w-full h-full flex items-center justify-center text-slate-400 font-bold text-sm bg-slate-200 hidden"></div>
+                    </div>
+                    <div class="min-w-0">
+                        <div id="perfil-enfermero-nombre" class="text-lg font-bold text-slate-800 tracking-tight truncate"></div>
+                        <div id="perfil-enfermero-especialidad" class="text-xs text-slate-500 mt-1"></div>
+                        <div class="mt-3 flex flex-wrap items-center gap-2">
+                            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Tarjeta profesional</span>
+                            <a id="perfil-enfermero-tarjeta-link" href="#" target="_blank" rel="noopener" class="text-[11px] font-semibold text-emerald-950 hover:text-emerald-800 underline underline-offset-4 hidden">
+                                Ver documento
+                            </a>
+                            <span id="perfil-enfermero-tarjeta-empty" class="text-[11px] text-slate-400 hidden">No registrada</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-5 bg-slate-50/60 border border-slate-100 rounded-2xl p-4">
+                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Biografía</div>
+                    <div id="perfil-enfermero-biografia" class="mt-2 text-sm text-slate-600 leading-relaxed"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const modal = document.getElementById('modal-perfil-enfermero');
+            const card = document.getElementById('modal-perfil-enfermero-card');
+            const btnCerrar = document.getElementById('btn-cerrar-modal-perfil-enfermero');
+
+            const elNombre = document.getElementById('perfil-enfermero-nombre');
+            const elEspecialidad = document.getElementById('perfil-enfermero-especialidad');
+            const elBio = document.getElementById('perfil-enfermero-biografia');
+
+            const imgFoto = document.getElementById('perfil-enfermero-foto');
+            const fotoFallback = document.getElementById('perfil-enfermero-foto-fallback');
+
+            const tarjetaLink = document.getElementById('perfil-enfermero-tarjeta-link');
+            const tarjetaEmpty = document.getElementById('perfil-enfermero-tarjeta-empty');
+
+            function abrirModal(data) {
+                if (!modal || !card) return;
+
+                const nombre = (data.nombre || '').trim() || 'Profesional';
+                const especialidad = (data.especialidad || '').trim();
+                const biografia = (data.biografia || '').trim() || 'Sin descripción profesional registrada.';
+                const tarjetaUrl = (data.tarjetaUrl || '').trim();
+                const fotoUrl = (data.fotoUrl || '').trim();
+
+                if (elNombre) elNombre.textContent = nombre;
+                if (elEspecialidad) elEspecialidad.textContent = especialidad;
+                if (elBio) elBio.textContent = biografia;
+
+                if (fotoUrl) {
+                    if (imgFoto) {
+                        imgFoto.src = fotoUrl;
+                        imgFoto.classList.remove('hidden');
+                    }
+                    if (fotoFallback) fotoFallback.classList.add('hidden');
+                } else {
+                    if (imgFoto) imgFoto.classList.add('hidden');
+                    if (fotoFallback) {
+                        fotoFallback.textContent = nombre.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
+                        fotoFallback.classList.remove('hidden');
+                    }
+                }
+
+                if (tarjetaUrl) {
+                    if (tarjetaLink) {
+                        tarjetaLink.href = tarjetaUrl;
+                        tarjetaLink.classList.remove('hidden');
+                    }
+                    if (tarjetaEmpty) tarjetaEmpty.classList.add('hidden');
+                } else {
+                    if (tarjetaLink) tarjetaLink.classList.add('hidden');
+                    if (tarjetaEmpty) tarjetaEmpty.classList.remove('hidden');
+                }
+
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                setTimeout(() => {
+                    card.classList.remove('scale-95', 'opacity-0');
+                    card.classList.add('scale-100', 'opacity-100');
+                }, 10);
+            }
+
+            function cerrarModal() {
+                if (!modal || !card) return;
+                card.classList.add('scale-95', 'opacity-0');
+                card.classList.remove('scale-100', 'opacity-100');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                }, 200);
+            }
+
+            document.querySelectorAll('[data-open-enfermero-perfil="1"]').forEach((btn) => {
+                btn.addEventListener('click', function () {
+                    abrirModal({
+                        nombre: this.dataset.nombre,
+                        especialidad: this.dataset.especialidad,
+                        biografia: this.dataset.biografia,
+                        tarjetaUrl: this.dataset.tarjetaUrl,
+                        fotoUrl: this.dataset.fotoUrl,
+                    });
+                });
+            });
+
+            if (btnCerrar) btnCerrar.addEventListener('click', cerrarModal);
+            if (modal) {
+                modal.addEventListener('click', function (e) {
+                    if (e.target === modal) cerrarModal();
+                });
+            }
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') cerrarModal();
+            });
+        });
+    </script>
+
+    <div id="photoCaptureModal" class="hidden fixed inset-0 z-50 w-full h-full bg-gradient-to-tr from-[#edf7f4]/95 via-[#f5fbf9]/95 to-[#e4f3ee]/95 backdrop-blur-sm p-4 sm:p-6 font-sans">
+        <div class="w-full h-full rounded-2xl bg-white border border-gray-50/50 shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden flex flex-col">
+            <div class="bg-[#0b2f24] text-white px-7 py-5 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-white/10 border border-white/10 flex items-center justify-center">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                            <path d="M4 4h4l2-2h4l2 2h4v16H4V4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                            <path d="M8 11c1.5-1.5 6.5-1.5 8 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                            <path d="M9 15c1-1 5-1 6 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                            <path d="M10 9h.01M14 9h.01" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                        </svg>
+                    </div>
+                    <div class="text-xs font-semibold tracking-[0.18em] uppercase">Verificación biométrica</div>
+                </div>
+                <button type="button" id="btnClosePhotoCapture" class="w-11 h-11 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 flex items-center justify-center transition-colors">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6 6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            <form id="photoCsrfForm" class="hidden">{% csrf_token %}</form>
+
+            <div class="flex-1 px-7 py-7 overflow-y-auto ax-scrollbar">
+                <div class="max-w-6xl mx-auto w-full h-full flex items-center justify-center">
+                    <div class="w-full grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 items-center">
+                        <div class="flex flex-col items-center">
+                            <div class="relative w-[19.5rem] h-[19.5rem] sm:w-[22rem] sm:h-[22rem] rounded-full overflow-hidden bg-slate-100 border border-gray-200 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+                                <video id="photoVideo" autoplay muted playsinline class="w-full h-full object-cover"></video>
+                                <img id="photoImagePreview" class="hidden w-full h-full object-cover" alt="Foto capturada" />
+                                <canvas id="photoCanvas" class="absolute inset-0 pointer-events-none"></canvas>
+                                <div id="photoLoading" class="hidden absolute inset-0 bg-white/75 backdrop-blur-sm flex items-center justify-center">
+                                    <div class="flex flex-col items-center">
+                                        <svg class="animate-spin h-9 w-9 text-emerald-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        <div class="mt-3 text-xs font-bold tracking-[0.24em] text-slate-700">PROCESANDO</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-6 text-center max-w-xl">
+                                <div id="faceStatusTitle" class="text-emerald-700 font-extrabold text-sm sm:text-base tracking-tight">
+                                    RECONOCIMIENTO FACIAL: CARGANDO MODELOS IA...
+                                </div>
+                                <div id="faceStatusSubtitle" class="text-sm text-slate-600 mt-1">
+                                    Preparando verificación en tiempo real.
+                                </div>
+                            </div>
+
+                            <div class="mt-8 grid grid-cols-2 gap-4 w-full max-w-xl">
+                                <button type="button" id="btnTakePhoto" class="bg-[#006B3F] hover:bg-[#005230] text-white rounded-xl py-4 font-medium text-sm transition-all duration-200 shadow-sm flex items-center justify-center gap-2">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                                        <circle cx="12" cy="13" r="4"/>
+                                    </svg>
+                                    Tomar Foto
+                                </button>
+                                <label class="bg-white hover:bg-gray-50 border border-gray-200 text-gray-800 rounded-xl py-4 font-medium text-sm transition-colors shadow-sm flex items-center justify-center gap-2 cursor-pointer">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                        <polyline points="17 8 12 3 7 8"/>
+                                        <line x1="12" y1="3" x2="12" y2="15"/>
+                                    </svg>
+                                    Subir Archivo
+                                    <input type="file" id="photoFileInput" accept="image/*" class="hidden">
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="w-full lg:w-80 flex flex-col gap-6">
+                            <div class="rounded-2xl bg-white border border-gray-50/50 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+                                <div class="text-xs font-semibold text-gray-700">Indicaciones</div>
+                                <div class="mt-2 text-sm text-gray-500 leading-relaxed">
+                                    Haga clic en Tomar Foto cuando el rostro esté centrado, con buena iluminación y sin filtros.
+                                </div>
+                                <div id="photoInlineAlert" class="hidden mt-4 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700"></div>
+                                <div class="mt-5 flex flex-col gap-2">
+                                    <button type="button" id="btnReplacePhoto" class="w-full bg-white hover:bg-gray-50 border border-gray-200 rounded-xl py-3 font-medium text-sm transition-colors text-gray-800">
+                                        Reemplazar Foto
+                                    </button>
+                                    <button type="button" id="btnConfirmPhoto" disabled class="w-full bg-[#006B3F] text-white rounded-xl py-3 font-medium text-sm transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                                        Confirmar Foto Profesional
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="rounded-2xl bg-white border border-gray-50/50 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+                                <div class="text-xs font-semibold text-gray-700">Original</div>
+                                <div class="mt-4 flex flex-col items-center">
+                                    <div class="w-20 h-20 rounded-full overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-500">
+                                        {% if perfil and perfil.foto_perfil %}
+                                            <img src="{{ perfil.foto_perfil.url }}" alt="Foto original" class="w-full h-full object-cover" />
+                                        {% else %}
+                                            {{ usuario.email|slice:":1"|upper }}
+                                        {% endif %}
+                                    </div>
+                                    <div class="mt-4 w-full flex flex-col gap-2">
+                                        <button type="button" disabled class="w-full bg-gray-100 text-gray-400 rounded-xl py-3 font-medium text-sm cursor-not-allowed">
+                                            Reemplazar Foto
+                                        </button>
+                                        <button type="button" disabled class="w-full bg-gray-100 text-gray-400 rounded-xl py-3 font-medium text-sm cursor-not-allowed">
+                                            Confirmar Foto Profesional
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const modal = document.getElementById('photoCaptureModal');
+            const btnClose = document.getElementById('btnClosePhotoCapture');
+            const containerAvatar = document.getElementById('container-avatar-update');
+            const headerAvatar = document.getElementById('btn-open-biometrics');
+            const video = document.getElementById('photoVideo');
+            const imagePreview = document.getElementById('photoImagePreview');
+            const canvas = document.getElementById('photoCanvas');
+            const loading = document.getElementById('photoLoading');
+            const titleEl = document.getElementById('faceStatusTitle');
+            const subEl = document.getElementById('faceStatusSubtitle');
+            const btnTake = document.getElementById('btnTakePhoto');
+            const fileInput = document.getElementById('photoFileInput');
+            const btnReplace = document.getElementById('btnReplacePhoto');
+            const btnConfirm = document.getElementById('btnConfirmPhoto');
+            const inlineAlert = document.getElementById('photoInlineAlert');
+
+            let modelsLoaded = false;
+            let stream = null;
+            let detectionInterval = null;
+            let realtimeHasFace = false;
+            let capturedDataUrl = null;
+            let selectedFile = null;
+
+            function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+                return '';
+            }
+
+            function getCsrfToken() {
+                const el = document.querySelector('#photoCsrfForm input[name=csrfmiddlewaretoken]');
+                const v = (el && el.value) ? el.value : '';
+                return v || getCookie('csrftoken');
+            }
+
+            function showInlineAlert(kind, message) {
+                if (!inlineAlert) return;
+                inlineAlert.classList.remove('hidden');
+                if (kind === 'error') {
+                    inlineAlert.className = 'mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600';
+                    inlineAlert.textContent = message;
+                    return;
+                }
+                if (kind === 'success') {
+                    inlineAlert.className = 'mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700';
+                    inlineAlert.textContent = message;
+                    return;
+                }
+                inlineAlert.className = 'mt-4 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700';
+                inlineAlert.textContent = message;
+            }
+
+            function clearInlineAlert() {
+                if (!inlineAlert) return;
+                inlineAlert.classList.add('hidden');
+                inlineAlert.textContent = '';
+            }
+
+            function setStatus(state) {
+                if (state === 'loading_models') {
+                    titleEl.className = 'text-emerald-700 font-extrabold text-sm sm:text-base tracking-tight';
+                    titleEl.textContent = 'RECONOCIMIENTO FACIAL: CARGANDO MODELOS IA...';
+                    subEl.textContent = 'Preparando verificación en tiempo real.';
+                    return;
+                }
+                if (state === 'realtime_detected') {
+                    titleEl.className = 'text-emerald-700 font-extrabold text-sm sm:text-base tracking-tight';
+                    titleEl.textContent = 'RECONOCIMIENTO FACIAL: ROSTRO DETECTADO (Asegurando cumplimiento)';
+                    subEl.textContent = 'Modelos listos. Rostro detectado en tiempo real.';
+                    return;
+                }
+                if (state === 'realtime_searching') {
+                    titleEl.className = 'text-amber-700 font-extrabold text-sm sm:text-base tracking-tight';
+                    titleEl.textContent = 'RECONOCIMIENTO FACIAL: BUSCANDO ROSTRO';
+                    subEl.textContent = 'Modelos listos. Analizando en tiempo real.';
+                    return;
+                }
+                if (state === 'no_face') {
+                    titleEl.className = 'text-rose-700 font-extrabold text-sm sm:text-base tracking-tight';
+                    titleEl.textContent = 'RECONOCIMIENTO FACIAL: NO SE DETECTA ROSTRO';
+                    subEl.textContent = 'Intente con otra pose o mejor iluminación.';
+                    return;
+                }
+                if (state === 'capture_ready') {
+                    titleEl.className = 'text-emerald-700 font-extrabold text-sm sm:text-base tracking-tight';
+                    titleEl.textContent = 'RECONOCIMIENTO FACIAL: ROSTRO DETECTADO (Asegurando cumplimiento)';
+                    subEl.textContent = 'Foto capturada y validada. Puede confirmar la actualización.';
+                    return;
+                }
+                if (state === 'error_models') {
+                    titleEl.className = 'text-rose-700 font-extrabold text-sm sm:text-base tracking-tight';
+                    titleEl.textContent = 'RECONOCIMIENTO FACIAL: ERROR DE MODELOS';
+                    subEl.textContent = 'No fue posible cargar los modelos de IA.';
+                    return;
+                }
+            }
+
+            function openModal() {
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+                resetState();
+                loadModelsAndStart();
+            }
+
+            function closeModal() {
+                modal.classList.add('hidden');
+                document.body.style.overflow = '';
+                stopAll();
+                resetState();
+            }
+
+            function resetState() {
+                capturedDataUrl = null;
+                selectedFile = null;
+                btnConfirm.disabled = true;
+                imagePreview.classList.add('hidden');
+                imagePreview.src = '';
+                video.classList.remove('hidden');
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                setStatus('loading_models');
+                clearInlineAlert();
+            }
+
+            async function stopAll() {
+                if (detectionInterval) {
+                    clearInterval(detectionInterval);
+                    detectionInterval = null;
+                }
+                realtimeHasFace = false;
+                if (stream) {
+                    stream.getTracks().forEach(t => t.stop());
+                    stream = null;
+                }
+                video.srcObject = null;
+            }
+
+            async function loadModelsAndStart() {
+                setStatus('loading_models');
+                try {
+                    if (!modelsLoaded) {
+                        const MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights';
+                        await Promise.all([
+                            faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+                            faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+                        ]);
+                        modelsLoaded = true;
+                    }
+                    await startWebcam();
+                } catch (e) {
+                    console.error(e);
+                    setStatus('error_models');
+                    showInlineAlert('error', 'No fue posible iniciar la verificación biométrica. Intente nuevamente.');
+                }
+            }
+
+            async function startWebcam() {
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+                    video.srcObject = stream;
+                    await video.play();
+                    canvas.width = video.videoWidth || 640;
+                    canvas.height = video.videoHeight || 480;
+                    startRealtimeDetection();
+                } catch (e) {
+                    console.error(e);
+                    setStatus('no_face');
+                }
+            }
+
+            function startRealtimeDetection() {
+                if (detectionInterval) clearInterval(detectionInterval);
+                detectionInterval = setInterval(async () => {
+                    if (!modelsLoaded) return;
+                    if (imagePreview && !imagePreview.classList.contains('hidden')) return;
+                    const det = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions());
+                    realtimeHasFace = Boolean(det);
+                    setStatus(realtimeHasFace ? 'realtime_detected' : 'realtime_searching');
+                }, 450);
+            }
+
+            async function analyzeImageElement(imgEl) {
+                if (!modelsLoaded) return null;
+                return faceapi.detectSingleFace(imgEl, new faceapi.TinyFaceDetectorOptions());
+            }
+
+            async function takePhoto() {
+                if (!stream) return;
+                loading.classList.remove('hidden');
+                const captureCanvas = document.createElement('canvas');
+                captureCanvas.width = video.videoWidth || 640;
+                captureCanvas.height = video.videoHeight || 480;
+                captureCanvas.getContext('2d').drawImage(video, 0, 0);
+                const dataUrl = captureCanvas.toDataURL('image/jpeg', 0.92);
+                const probeImg = new Image();
+                probeImg.src = dataUrl;
+                await new Promise(resolve => { probeImg.onload = resolve; });
+                const det = await analyzeImageElement(probeImg);
+                loading.classList.add('hidden');
+                if (!det) {
+                    setStatus('no_face');
+                    btnConfirm.disabled = true;
+                    showInlineAlert('error', 'No se detecta rostro en la foto. Ajuste la iluminación e intente de nuevo.');
+                    return;
+                }
+                capturedDataUrl = dataUrl;
+                imagePreview.src = dataUrl;
+                imagePreview.classList.remove('hidden');
+                video.classList.add('hidden');
+                btnConfirm.disabled = false;
+                setStatus('capture_ready');
+                clearInlineAlert();
+                await stopAll();
+            }
+
+            async function replacePhoto() {
+                resetState();
+                await stopAll();
+                await startWebcam();
+            }
+
+            async function onFileSelected(e) {
+                const file = e.target.files && e.target.files[0];
+                if (!file) return;
+                selectedFile = file;
+                capturedDataUrl = null;
+                loading.classList.remove('hidden');
+                await stopAll();
+                const url = URL.createObjectURL(file);
+                imagePreview.src = url;
+                imagePreview.classList.remove('hidden');
+                video.classList.add('hidden');
+                const det = await analyzeImageElement(imagePreview);
+                loading.classList.add('hidden');
+                if (!det) {
+                    setStatus('no_face');
+                    btnConfirm.disabled = true;
+                    showInlineAlert('error', 'No se detecta rostro en el archivo seleccionado. Intente con otra imagen.');
+                    return;
+                }
+                btnConfirm.disabled = false;
+                setStatus('capture_ready');
+                clearInlineAlert();
+            }
+
+            async function submitPhoto() {
+                if (btnConfirm.disabled) return;
+                btnConfirm.disabled = true;
+                loading.classList.remove('hidden');
+                try {
+                    const csrf = getCsrfToken();
+                    let response;
+                    if (capturedDataUrl) {
+                        response = await fetch('{% url "update_profile_picture" %}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': csrf,
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json',
+                            },
+                            body: JSON.stringify({ foto_base64: capturedDataUrl }),
+                        });
+                    } else if (selectedFile) {
+                        const fd = new FormData();
+                        fd.append('foto_perfil', selectedFile, selectedFile.name || 'profile.jpg');
+                        response = await fetch('{% url "update_profile_picture" %}', {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': csrf,
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json',
+                            },
+                            body: fd,
+                        });
+                    } else {
+                        loading.classList.add('hidden');
+                        btnConfirm.disabled = false;
+                        return;
+                    }
+
+                    const contentType = response.headers.get('content-type') || '';
+                    if (!response.ok) {
+                        if (contentType.includes('application/json')) {
+                            const errJson = await response.json();
+                            throw new Error(errJson.message || errJson.error || 'Error en la respuesta del servidor.');
+                        }
+                        const errText = await response.text();
+                        throw new Error(errText || 'Error en la respuesta del servidor.');
+                    }
+                    if (!contentType.includes('application/json')) {
+                        const errText = await response.text();
+                        throw new Error(errText || 'El servidor no devolvió una respuesta JSON válida.');
+                    }
+                    const data = await response.json();
+                    if (data.status !== 'success') {
+                        throw new Error(data.message || 'No se pudo actualizar la foto.');
+                    }
+                    showInlineAlert('success', data.message || 'Foto de perfil actualizada correctamente.');
+                    window.setTimeout(() => window.location.reload(), 1200);
+                } catch (e) {
+                    console.error(e);
+                    loading.classList.add('hidden');
+                    btnConfirm.disabled = false;
+                    showInlineAlert('error', String(e.message || e));
+                }
+            }
+
+            if (containerAvatar) containerAvatar.addEventListener('click', openModal);
+            if (headerAvatar) headerAvatar.addEventListener('click', openModal);
+            if (btnClose) btnClose.addEventListener('click', closeModal);
+            modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal(); });
+            if (btnTake) btnTake.addEventListener('click', takePhoto);
+            if (btnReplace) btnReplace.addEventListener('click', replacePhoto);
+            if (fileInput) fileInput.addEventListener('change', onFileSelected);
+            if (btnConfirm) btnConfirm.addEventListener('click', submitPhoto);
+        });
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('form-settings');
+            if (!form) return;
+
+            function getCsrfToken() {
+                const input = form.querySelector('input[name="csrfmiddlewaretoken"]');
+                return (input && input.value) ? input.value : '';
+            }
+
+            function toast(icon, title, text) {
+                const t = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3200,
+                    timerProgressBar: true,
+                    iconColor: '#059669',
+                    customClass: {
+                        popup: 'bg-emerald-50 border border-emerald-200 rounded-xl shadow-lg px-4 py-3',
+                        title: 'text-emerald-950 text-sm font-bold',
+                        htmlContainer: 'text-emerald-800 text-xs mt-0.5',
+                        icon: 'bg-emerald-100 border-0 text-emerald-600',
+                    },
+                });
+                t.fire({ icon, title, text });
+            }
+
+            async function submitSettings(e) {
+                e.preventDefault();
+                const submitters = Array.from(form.querySelectorAll('button[type="submit"]'));
+                submitters.forEach((b) => { b.disabled = true; b.classList.add('opacity-80'); });
+
+                try {
+                    const res = await fetch(form.action, {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRFToken': getCsrfToken(),
+                        },
+                        body: new FormData(form),
+                    });
+
+                    const contentType = res.headers.get('content-type') || '';
+                    if (!contentType.includes('application/json')) {
+                        const errText = await res.text();
+                        throw new Error(errText || 'El servidor no devolvió una respuesta JSON válida.');
+                    }
+
+                    const data = await res.json();
+                    if (!res.ok || !data || data.status !== 'success') {
+                        throw new Error((data && (data.error || data.message)) || 'No se pudo guardar el cambio.');
+                    }
+
+                    toast('success', 'Guardado', 'Los cambios se guardaron correctamente.');
+                } catch (err) {
+                    toast('error', 'No se pudo guardar', String(err && err.message ? err.message : err));
+                } finally {
+                    submitters.forEach((b) => { b.disabled = false; b.classList.remove('opacity-80'); });
+                }
+            }
+
+            form.addEventListener('submit', submitSettings);
+        });
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const buttons = Array.from(document.querySelectorAll('[data-copy-pin]'));
+            if (!buttons.length) return;
+
+            async function copyText(text) {
+                const value = String(text || '').trim();
+                if (!value) return false;
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(value);
+                    return true;
+                }
+                const el = document.createElement('textarea');
+                el.value = value;
+                el.setAttribute('readonly', 'true');
+                el.style.position = 'fixed';
+                el.style.top = '-9999px';
+                document.body.appendChild(el);
+                el.select();
+                const ok = document.execCommand('copy');
+                document.body.removeChild(el);
+                return ok;
+            }
+
+            buttons.forEach((btn) => {
+                btn.addEventListener('click', async () => {
+                    const pin = btn.getAttribute('data-copy-pin') || '';
+                    try {
+                        const ok = await copyText(pin);
+                        if (!ok) throw new Error('No se pudo copiar el PIN.');
+                        if (window.Swal) {
+                            window.Swal.fire({ icon: 'success', title: 'Copiado', text: 'PIN copiado al portapapeles.', timer: 1800, showConfirmButton: false });
+                        }
+                    } catch (e) {
+                        if (window.Swal) {
+                            window.Swal.fire({ icon: 'error', title: 'No se pudo copiar', text: 'Copia el PIN manualmente.', confirmButtonColor: '#059669' });
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+    </div>
+</body>
+</html>

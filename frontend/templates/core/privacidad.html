@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Política de Privacidad · ASSIST CORE</title>
+    {% load static %}
+    <script src="https://cdn.tailwindcss.com"></script>
+    {% include 'includes/global_ui_assets.html' %}
+</head>
+<body class="bg-slate-50 text-slate-900">
+    <header class="sticky top-0 z-40 border-b border-slate-200 bg-slate-50/90 backdrop-blur">
+        <div class="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-6">
+            <a href="{% url 'home' %}" class="text-sm font-semibold text-emerald-700 hover:text-emerald-800">← Volver a la landing</a>
+            <div class="text-xs font-semibold text-slate-500">Legal</div>
+        </div>
+    </header>
+
+    <main class="mx-auto max-w-5xl px-4 py-10 sm:px-6">
+        <div class="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200">
+            <div class="bg-gradient-to-r from-emerald-500 to-teal-600 px-6 py-8 text-white sm:px-10">
+                <div class="text-xs font-semibold uppercase tracking-[0.22em] text-white/85">ASSIST CORE</div>
+                <h1 class="mt-2 text-2xl font-extrabold sm:text-3xl">Política de Privacidad</h1>
+                <div class="mt-3 text-sm text-white/90">Última actualización: {{ fecha_actualizacion|default:"[Fecha]" }}</div>
+            </div>
+
+            <div class="px-6 py-8 text-sm leading-7 text-slate-700 sm:px-10">
+                <p>
+                    En ASSIST CORE valoramos y protegemos la privacidad de nuestros usuarios. La presente política describe cómo recopilamos, utilizamos y protegemos la información personal proporcionada a través de la plataforma.
+                </p>
+
+                <div class="mt-6 space-y-5">
+                    <section>
+                        <h2 class="text-base font-bold text-slate-900">1. Información recopilada</h2>
+                        <p class="mt-2">Podemos recopilar la siguiente información:</p>
+                        <ul class="mt-2 list-disc pl-5 space-y-1">
+                            <li>Nombre completo.</li>
+                            <li>Correo electrónico.</li>
+                            <li>Número de contacto.</li>
+                            <li>Dirección registrada para la prestación del servicio.</li>
+                            <li>Información relacionada con las solicitudes de asistencia.</li>
+                            <li>Documentación profesional presentada por el personal de enfermería.</li>
+                        </ul>
+                    </section>
+
+                    <section>
+                        <h2 class="text-base font-bold text-slate-900">2. Uso de la información</h2>
+                        <p class="mt-2">La información recopilada será utilizada para:</p>
+                        <ul class="mt-2 list-disc pl-5 space-y-1">
+                            <li>Gestionar el registro y autenticación de usuarios.</li>
+                            <li>Facilitar la conexión entre pacientes y enfermeros.</li>
+                            <li>Validar las credenciales del personal de enfermería.</li>
+                            <li>Enviar notificaciones relacionadas con el funcionamiento del servicio.</li>
+                            <li>Mejorar la experiencia y seguridad dentro de la plataforma.</li>
+                        </ul>
+                    </section>
+
+                    <section>
+                        <h2 class="text-base font-bold text-slate-900">3. Protección de la información</h2>
+                        <p class="mt-2">
+                            ASSIST CORE implementará medidas razonables de seguridad para proteger la información personal contra accesos no autorizados, alteración, divulgación o destrucción indebida.
+                        </p>
+                    </section>
+
+                    <section>
+                        <h2 class="text-base font-bold text-slate-900">4. Compartición de información</h2>
+                        <p class="mt-2">
+                            La información personal no será vendida ni compartida con terceros ajenos al funcionamiento de la plataforma, salvo cuando exista una obligación legal o sea necesario para la prestación del servicio solicitado.
+                        </p>
+                    </section>
+
+                    <section>
+                        <h2 class="text-base font-bold text-slate-900">5. Derechos del usuario</h2>
+                        <p class="mt-2">Los usuarios podrán:</p>
+                        <ul class="mt-2 list-disc pl-5 space-y-1">
+                            <li>Consultar la información almacenada sobre ellos.</li>
+                            <li>Solicitar la actualización o corrección de sus datos personales.</li>
+                            <li>Solicitar la eliminación de su cuenta y de la información asociada, conforme a la normativa aplicable.</li>
+                        </ul>
+                    </section>
+
+                    <section>
+                        <h2 class="text-base font-bold text-slate-900">6. Conservación de los datos</h2>
+                        <p class="mt-2">
+                            La información será conservada únicamente durante el tiempo necesario para cumplir con las finalidades descritas en esta política o según lo exija la legislación vigente.
+                        </p>
+                    </section>
+
+                    <section>
+                        <h2 class="text-base font-bold text-slate-900">7. Cambios en la política de privacidad</h2>
+                        <p class="mt-2">
+                            ASSIST CORE podrá modificar esta política cuando sea necesario. Las actualizaciones serán publicadas dentro de la plataforma.
+                        </p>
+                    </section>
+
+                    <section>
+                        <h2 class="text-base font-bold text-slate-900">8. Contacto</h2>
+                        <p class="mt-2">
+                            Si tienes preguntas relacionadas con esta política de privacidad o el tratamiento de tus datos personales, puedes comunicarte con el equipo responsable de ASSIST CORE a través de los canales oficiales de contacto establecidos en la plataforma.
+                        </p>
+                    </section>
+                </div>
+
+                <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+                    <a href="{% url 'home' %}#donaciones" class="inline-flex items-center justify-center rounded-full bg-emerald-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-700">
+                        Apoyar la causa
+                    </a>
+                    <a href="{% url 'home' %}" class="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-900 transition-colors hover:bg-slate-50">
+                        Ir al inicio
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

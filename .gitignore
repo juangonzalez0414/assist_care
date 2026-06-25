@@ -1,0 +1,22 @@
+venv/
+**/__pycache__/
+*.pyc
+.env
+.env.*
+!.env.example
+media/
+.vscode/
+.dbg/
+*.log
+*.sqlite3
+
+
+# Archivos específicos de la configuración anterior
+project_b/
+debug-*
+schema
+*.exe
+
+# Archivos de sistema y basura
+.DS_Store
+Thumbs.db
